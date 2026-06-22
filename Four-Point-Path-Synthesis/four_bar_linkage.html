@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>4-Bar Linkage | Animated General Case</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;user-select:none}
+body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#1e293b,#0f172a);height:100vh;width:100vw;overflow:hidden;display:flex;justify-content:center;align-items:center}
+.container{width:100vw;height:100vh;display:flex;justify-content:center;align-items:center;padding:20px;padding-right:300px}
+canvas{background:#ffffff;border-radius:20px;box-shadow:0 25px 50px rgba(0,0,0,0.4);cursor:crosshair;display:block;border:3px solid #334155}
+.sidebar{position:fixed;right:0;top:0;width:300px;height:100vh;background:#0d1424f0;backdrop-filter:blur(14px);border-left:1px solid #2d3f55;padding:14px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;z-index:100}
+h3{color:#93c5fd;font-size:.82rem;border-bottom:1px solid #1e3a5f;padding-bottom:5px;letter-spacing:.04em}
+.plist{background:#0a1628;border-radius:8px;padding:8px 10px}
+.pi{display:flex;justify-content:space-between;font-size:.72rem;padding:3px 0;border-bottom:1px solid #1e293b;color:#94a3b8}
+.pi:last-child{border-bottom:none}
+.pi b{color:#60a5fa}
+.sbox{background:#0a1628;border-radius:8px;padding:8px 10px;text-align:center;font-size:.72rem;color:#64748b}
+.badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.68rem;font-weight:bold}
+.b-amber{background:#d97706;color:#1c1008}
+.b-green{background:#059669;color:#fff}
+.b-purple{background:#7c3aed;color:#fff}
+.ctrl{background:#0a1628;border-radius:8px;padding:8px 10px}
+.ctrl label{font-size:.68rem;color:#64748b;display:block;margin-bottom:3px}
+.ctrl input[type=range]{width:100%;accent-color:#3b82f6;margin:3px 0}
+.vshow{font-size:.9rem;font-weight:bold;text-align:center;margin-bottom:3px}
+.vc{color:#10b981}.va{color:#ef4444}
+button{width:100%;padding:8px;border:none;border-radius:24px;color:#fff;font-weight:700;font-size:.78rem;cursor:pointer;transition:.15s;letter-spacing:.02em}
+button:hover{filter:brightness(1.15);transform:scale(1.01)}
+.b1{background:#1d4ed8}.b1.on{background:#dc2626}
+.b2{background:#374151}.b3{background:#7f1d1d}.b4{background:#4c1d95}
+.b5{background:#064e3b}
+.ibox{background:#0a1628;border-radius:8px;padding:8px 10px;font-size:.7rem;border-left:3px solid #d97706;color:#94a3b8}
+.lbox{background:#0a1628;border-radius:8px;padding:8px 10px;font-size:.7rem;border-left:3px solid #10b981;color:#94a3b8}
+.sep{height:1px;background:#1e293b}
+.anim-status{background:#0a1628;border-radius:8px;padding:8px;text-align:center;font-size:.7rem;color:#60a5fa;font-family:monospace;min-height:28px}
+.steps-panel{position:fixed;bottom:18px;left:50%;transform:translateX(calc(-50% - 150px));width:auto;max-width:600px;background:#0d1424ee;backdrop-filter:blur(12px);border:1px solid #2d3f55;border-radius:40px;padding:8px 14px;box-shadow:0 8px 30px rgba(0,0,0,0.5);z-index:100;pointer-events:auto;display:flex;align-items:center;gap:10px;}
+.step-badge{background:#1e3a8a;color:#93c5fd;font-size:0.65rem;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;letter-spacing:.04em;flex-shrink:0;}
+.step-badge.done-all{background:#064e3b;color:#6ee7b7;}
+.step-text{font-size:0.75rem;color:#bfdbfe;line-height:1.4;flex:1;}
+.step-text b{color:#60a5fa;}
+.step-nav{background:#1e3a5f;border:1px solid #2d3f55;color:#93c5fd;font-size:1rem;font-weight:700;width:26px;height:26px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;line-height:1;transition:background .15s;}
+.step-nav:hover:not(:disabled){background:#1d4ed8;}
+.step-nav:disabled{opacity:0.2;cursor:default;}
+</style>
+</head>
+<body>
+<div class="container"><canvas id="cv"></canvas></div>
+<div class="steps-panel" id="stepsPanel">
+  <button class="step-nav" id="stepBack" onclick="stepNav(-1)">&#8249;</button>
+  <span class="step-badge" id="stepBadge">STEP 1 / 7</span>
+  <span class="step-text" id="stepText"></span>
+  <button class="step-nav" id="stepFwd" onclick="stepNav(1)">&#8250;</button>
+</div>
+<div class="sidebar">
+  <h3>📌 PRECISION POINTS C1–C4</h3>
+  <div class="plist" id="plist"><div style="color:#475569;text-align:center;font-size:.7rem">✨ Click canvas → add C1 C2 C3 C4</div></div>
+
+  <div class="sbox" id="ssel"><span>⚪ Select 2 base points</span><p style="margin-top:3px">Click any 2 C points on canvas</p></div>
+  <div class="sbox" id="shr"><span>📍 Hr: not placed</span><p style="margin-top:3px">Click on orange bisector</p></div>
+  <div class="sbox" id="shc" style="display:none"><span class="badge b-purple" id="hcTxt">Hc: —</span><p style="margin-top:3px">Click on purple bisector</p></div>
+
+  <div class="ctrl" id="ctrlR" style="display:none">
+    <label>⚫ CIRCLE RADIUS R</label>
+    <div class="vshow vc" id="vR">50 units</div>
+    <input type="range" id="slR" min="5" max="150" step="1" value="50">
+  </div>
+  <div class="ctrl" id="ctrlr" style="display:none">
+    <label>✂️ SMALL r VALUE</label>
+    <div class="vshow va" id="vr">60 units</div>
+    <input type="range" id="slr" min="5" max="200" step="1" value="60">
+  </div>
+
+  <div class="ibox" id="ibox" style="display:none">
+    <b style="color:#d97706">⭐ POINT B (rocker pivot)</b>
+    <div id="iboxTxt" style="margin-top:3px"></div>
+  </div>
+  <div class="lbox" id="lbox" style="display:none">
+    <b style="color:#10b981">🔗 LINKAGE READY</b>
+    <div id="lboxTxt" style="margin-top:3px"></div>
+  </div>
+
+  <div class="sep"></div>
+  <h3>🎬 ANIMATION</h3>
+  <button class="b1" id="btnAnim" disabled>▶ Animate</button>
+  <div class="anim-status" id="animSt">—</div>
+  <div class="ctrl">
+    <label>Speed</label>
+    <input type="range" id="slSpd" min="0.1" max="4" step="0.1" value="0.8">
+    <div class="vshow" style="color:#60a5fa" id="vSpd">0.8×</div>
+  </div>
+  <div class="ctrl">
+    <label>Assembly</label>
+    <div style="display:flex;gap:6px;margin-top:4px">
+      <button id="btnA0" style="flex:1;padding:5px;font-size:.7rem;background:#1e3a5f;border-radius:6px" onclick="setAssembly(0)">Open</button>
+      <button id="btnA1" style="flex:1;padding:5px;font-size:.7rem;background:#374151;border-radius:6px" onclick="setAssembly(1)">Crossed</button>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+  <button class="b3" id="btnClear">🗑️ Clear All</button>
+  <button class="b4" id="btnClearSel">✖ Clear Selection</button>
+  <button class="b5" id="btnRmHr">❌ Remove Hr</button>
+  <button class="b4" id="btnRmHc" style="display:none">❌ Remove Hc</button>
+</div>
+
+<script>
+
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+let W, H;
+const mg = {t:55, r:55, b:55, l:75};
+let gW, gH;
+let X0=-100,X1=100; const Y0=-100,Y1=100;
+
+/* ── coordinate transforms ── */
+function u2p(x,y){ return { px: mg.l+(x-X0)/(X1-X0)*gW, py: mg.t+gH-(y-Y0)/(Y1-Y0)*gH }; }
+function p2u(px,py){ return { x:X0+(px-mg.l)/gW*(X1-X0), y:Y0+(mg.t+gH-py)/gH*(Y1-Y0) }; }
+
+/* ── geometry utils ── */
+const D=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+function pbis(p1,p2){
+  const mx=(p1.x+p2.x)/2, my=(p1.y+p2.y)/2;
+  const dx=p2.x-p1.x, dy=p2.y-p1.y, l=Math.hypot(dx,dy);
+  if(l<1e-9)return null;
+  const px=-dy/l, py=dx/l, e=400;
+  return {s:{x:mx-px*e,y:my-py*e}, e:{x:mx+px*e,y:my+py*e}, m:{x:mx,y:my}, px, py};
+}
+function projOnLine(pt,line){
+  const dx=line.e.x-line.s.x, dy=line.e.y-line.s.y;
+  const t=((pt.x-line.s.x)*dx+(pt.y-line.s.y)*dy)/(dx*dx+dy*dy);
+  return {x:line.s.x+t*dx, y:line.s.y+t*dy};
+}
+function llx(l1,l2){
+  const x1=l1.s.x,y1=l1.s.y,x2=l1.e.x,y2=l1.e.y;
+  const x3=l2.s.x,y3=l2.s.y,x4=l2.e.x,y4=l2.e.y;
+  const d=(x1-x2)*(y3-y4)-(y1-y2)*(x3-x4);
+  if(Math.abs(d)<1e-9)return null;
+  const t=((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/d;
+  return {x:x1+t*(x2-x1), y:y1+t*(y2-y1)};
+}
+function ccx(c1,r1,c2,r2){
+  const dx=c2.x-c1.x, dy=c2.y-c1.y, d=Math.hypot(dx,dy);
+  if(d>r1+r2+1e-9 || d<Math.abs(r1-r2)-1e-9 || d<1e-9) return [];
+  const a=(r1*r1-r2*r2+d*d)/(2*d);
+  const h2=r1*r1-a*a; if(h2<0)return [];
+  const h=Math.sqrt(h2);
+  const mx=c1.x+dx*a/d, my=c1.y+dy*a/d;
+  return [{x:mx-dy*h/d, y:my+dx*h/d},{x:mx+dy*h/d, y:my-dx*h/d}];
+}
+function cutPt(P,r,H,R){
+  if(!P||!H||r<=0||R<=0)return null;
+  const pts=ccx(P,r,H,R);
+  if(!pts.length)return null;
+  return pts.length===1?pts[0]:(pts[0].x<pts[1].x?pts[0]:pts[1]);
+}
+function congrSameOrient(A,B,C,P,Q){
+  /* Triangle A-B-C congruent to P-Q-result with same orientation */
+  const d1=D(B,C), d2=D(A,C);
+  const pts=ccx(Q,d1,P,d2);
+  if(!pts.length)return null;
+  if(pts.length===1)return pts[0];
+  const areaABC = (B.x-A.x)*(C.y-A.y) - (B.y-A.y)*(C.x-A.x);
+  const area1   = (Q.x-P.x)*(pts[0].y-P.y) - (Q.y-P.y)*(pts[0].x-P.x);
+  const area2   = (Q.x-P.x)*(pts[1].y-P.y) - (Q.y-P.y)*(pts[1].x-P.x);
+  if(Math.abs(areaABC)<1e-9) return pts[0].x>pts[1].x?pts[0]:pts[1];
+  return (areaABC*area1 > 0) ? pts[0] : pts[1];
+}
+
+/* ══ Choose best A3/A4 by picking the shortest angular sequence around Hc ══
+   Ensures the crank rotates continuously in one direction through A1->A2->A3->A4
+   (or whichever order they appear temporally). */
+function chooseSequentialA(allA_in, other, A3cands, A4cands, Hc){
+  if(!A3cands.length||!A4cands.length) return {A3:A3cands[0]||null,A4:A4cands[0]||null};
+  let best = null, bestScore = Infinity;
+  for(const a3 of A3cands){
+    for(const a4 of A4cands){
+      const aArr = [...allA_in];
+      aArr[other[0]] = a3;
+      aArr[other[1]] = a4;
+      
+      const th = aArr.map(p => Math.atan2(p.y - Hc.y, p.x - Hc.x));
+      let L_CCW = 0, L_CW = 0;
+      for(let i=0; i<3; i++){
+        let d = th[i+1] - th[i];
+        while(d < 0) d += 2*Math.PI;
+        L_CCW += d;
+      }
+      for(let i=0; i<3; i++){
+        let d = th[i] - th[i+1];
+        while(d < 0) d += 2*Math.PI;
+        L_CW += d;
+      }
+      
+      const score = Math.min(L_CCW, L_CW);
+      if(score < bestScore){
+        bestScore = score;
+        best = {A3: a3, A4: a4};
+      }
+    }
+  }
+  return best || {A3: A3cands[0], A4: A4cands[0]};
+}
+
+/* ══ STATE ══ */
+let pts=[]; // C1..C4
+let sel=[]; // selected indices
+let Hr=null, Hc=null;
+let bigR=50, smR=60;
+let asmb=0; // 0=open, 1=crossed
+let viewStep=1;  // which step the user is currently reading
+
+/* Computed linkage parameters (set once Hc+Hr+B known) */
+let LG=null;
+/*  LG = {
+      r2: crank length |Hc-A1|,
+      r3: coupler length |A1-B1|,   (B1 = pointB)
+      r4: rocker length |Hr-B1|,
+      r1: ground length |Hc-Hr|,
+      CinFrame: {dx,dy} — offset of C1 from A1 in coupler-body frame
+      initTheta: crank angle at position 1 (for drawing reference)
+    } */
+
+/* Animation */
+let animating=false, animId=null, theta=0, spd=0.8, lastT=null, thetaDir=1, prevA=null, prevB=null;
+
+/* Drag */
+let dragging=null, isDrHr=false, isDrHc=false, drOff={x:0,y:0};
+
+/* ══ RESIZE ══ */
+function resize(){
+  const w=window.innerWidth-320;
+  const h=window.innerHeight-40;
+  cv.width=w; cv.height=h; cv.style.width=w+'px'; cv.style.height=h+'px';
+  W=w; H=h; gW=W-mg.l-mg.r; gH=H-mg.t-mg.b;
+  const xRadius = 100 * gW / gH;
+  X0 = -xRadius; X1 = xRadius;
+  redraw();
+}
+window.addEventListener('resize',resize);
+
+/* ══ SOLVE 4-BAR at crank angle θ ══
+   Returns {A, B, valid} using classic Freudenstein / circle-circle
+   O2=Hc (crank pivot), O4=Hr (rocker pivot)
+   Link lengths: r2 (crank), r3 (coupler=A-B), r4 (rocker), r1 (ground)
+*/
+function solve4Bar(theta, assembly, prevB=null){
+  if(!LG||!Hc||!Hr) return null;
+  const {r2,r3,r4} = LG;
+  // A = Hc + r2*(cos θ, sin θ)
+  const A = {x: Hc.x + r2*Math.cos(theta), y: Hc.y + r2*Math.sin(theta)};
+  // B is on circle(A, r3) ∩ circle(Hr, r4)
+  const candidates = ccx(A, r3, Hr, r4);
+  if(!candidates.length) return null;
+  let index = assembly % candidates.length;
+  if(candidates.length > 1 && prevB){
+    const d0 = D(candidates[0], prevB);
+    const d1 = D(candidates[1], prevB);
+    index = d0 <= d1 ? 0 : 1;
+  }
+  const B = candidates[index] || candidates[0];
+  return {A, B, assembly: index};
+}
+
+/* Get C from A and B using stored rigid-body offset */
+function getC(A, B){
+  if(!LG||!A||!B) return null;
+  // Coupler frame angle = angle of vector A→B
+  const ang = Math.atan2(B.y-A.y, B.x-A.x);
+  const cos = Math.cos(ang), sin = Math.sin(ang);
+  const {dx,dy} = LG.CinFrame;
+  return {x: A.x + dx*cos - dy*sin, y: A.y + dx*sin + dy*cos};
+}
+
+/* ══ BUILD LINKAGE PARAMETERS from the 4 known positions ══ */
+function buildLinkage(){
+  LG=null;
+  if(!Hc||!Hr) return;
+  if(sel.length<2||pts.length<4) return;
+
+  /* Recompute all A points */
+  const allA=[null,null,null,null];
+  // Selected pair via Hr circle
+  for(let i=0;i<2;i++){
+    allA[sel[i]] = cutPt(pts[sel[i]], smR, Hr, bigR);
+  }
+  if(!allA[sel[0]]||!allA[sel[1]]) return;
+
+  // Hc radius = dist(Hc, A_sel0)
+  const hcR = D(Hc, allA[sel[0]]);
+
+  // Other pair via Hc circle — choose sequence to follow C1->C2->C3->C4 smoothly
+  const other=[];
+  for(let i=0;i<4;i++) if(!sel.includes(i)) other.push(i);
+  const _A3cands=ccx(pts[other[0]],smR,Hc,hcR);
+  const _A4cands=ccx(pts[other[1]],smR,Hc,hcR);
+  if(!_A3cands.length||!_A4cands.length) return;
+  const _best=chooseSequentialA(allA, other, _A3cands, _A4cands, Hc);
+  allA[other[0]]=_best.A3; allA[other[1]]=_best.A4;
+  if(!allA[other[0]]||!allA[other[1]]) return;
+
+  /* Congruent points → B (rocker fixed pivot) */
+  const sC=pts[sel[0]], sA=allA[sel[0]];
+  const cp1 = congrSameOrient(pts[other[0]], allA[other[0]], Hr, sC, sA);
+  const cp4 = congrSameOrient(pts[other[1]], allA[other[1]], Hr, sC, sA);
+  if(!cp1||!cp4) return;
+
+  const pb1 = pbis(cp1, Hr), pb2 = pbis(cp4, Hr);
+  const B = llx(pb1, pb2);
+  if(!B) return;
+
+  /* Fixed link lengths */
+  const r2 = D(Hc, allA[sel[0]]);  // crank length
+  const r3 = D(allA[sel[0]], B);    // coupler A-B distance
+  const r4 = D(Hr, B);              // rocker length
+  const r1 = D(Hc, Hr);            // ground
+
+  /* Coupler rigid body: C1 position relative to (A1,B1) frame */
+  const A1 = allA[sel[0]], C1 = pts[sel[0]], B1 = B;
+  const frameAng = Math.atan2(B1.y-A1.y, B1.x-A1.x);
+  const wx = C1.x-A1.x, wy = C1.y-A1.y;
+  // Rotate to local frame
+  const cos0=Math.cos(-frameAng), sin0=Math.sin(-frameAng);
+  const dx = wx*cos0 - wy*sin0;
+  const dy = wx*sin0 + wy*cos0;
+
+  const initTheta = Math.atan2(A1.y-Hc.y, A1.x-Hc.x);
+  const initCandidates = ccx(A1, r3, Hr, r4);
+  const initAssembly = initCandidates.length > 1
+    ? (D(initCandidates[0], B) <= D(initCandidates[1], B) ? 0 : 1)
+    : 0;
+
+  LG = {r2, r3, r4, r1, CinFrame:{dx,dy}, initTheta, initAssembly, B, allA, other, cp1, cp4};
+
+  // Update UI
+  document.getElementById('ibox').style.display='block';
+  document.getElementById('iboxTxt').textContent=`B(${B.x.toFixed(1)}, ${B.y.toFixed(1)}) | r2=${r2.toFixed(1)} r3=${r3.toFixed(1)} r4=${r4.toFixed(1)}`;
+  document.getElementById('lbox').style.display='block';
+  document.getElementById('lboxTxt').textContent=`Hc→A (crank ${r2.toFixed(1)}) | A-C-B coupler | B→Hr (rocker ${r4.toFixed(1)})`;
+  document.getElementById('btnAnim').disabled=false;
+
+  theta = initTheta;
+  thetaDir = 1;
+  return LG;
+}
+
+/* ══ COUPLER TRACE (pre-compute full revolution) ══ */
+let tracePoints=[];
+function computeTrace(){
+  tracePoints=[];
+  if(!LG||!Hc||!Hr) return;
+  const N=1440;
+  let traceAsmb = asmb;
+  let prevTraceB = LG.B;
+  for(let i=0;i<=N;i++){
+    const th = LG.initTheta + (i/N)*2*Math.PI;
+    let pos = solve4Bar(th, traceAsmb, prevTraceB);
+    if(!pos){
+      const alt = solve4Bar(th, 1-traceAsmb, prevTraceB);
+      if(alt) { pos = alt; traceAsmb = alt.assembly; }
+    } else if(pos.assembly !== traceAsmb){
+      traceAsmb = pos.assembly;
+    }
+    if(pos){
+      const C = getC(pos.A, pos.B);
+      if(C){ tracePoints.push({...C}); prevTraceB = pos.B; continue; }
+    }
+    tracePoints.push(null);
+  }
+}
+
+/* ══ DRAW ══ */
+function redraw(animFrame=null){
+  ctx.clearRect(0,0,W,H);
+
+  /* bg */
+  ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.roundRect(0,0,W,H,20); ctx.fill();
+
+  drawGridAxes();
+
+  /* r arcs from all C points — only show after Hr is placed */
+  if(pts.length===4 && smR>0 && Hr){
+    const rp = pxLen(smR);
+    ctx.setLineDash([7,5]);
+    for(let i=0;i<4;i++){
+      const p=u2p(pts[i].x,pts[i].y);
+      ctx.beginPath(); ctx.arc(p.px,p.py,rp,0,2*Math.PI);
+      ctx.strokeStyle='rgba(245,158,11,0.3)'; ctx.lineWidth=1.2; ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+
+  if(animFrame){
+    drawAnimFrame(animFrame);
+  } else {
+    drawStaticConstruction();
+  }
+
+  /* Always draw C points on top */
+  drawCPoints();
+  updateUI();
+}
+
+function pxLen(u){ return u2p(u,0).px - u2p(0,0).px; }
+
+function drawStaticConstruction(){
+  if(!sel.length||pts.length<4) return;
+
+  /* Orange bisector C_sel0-C_sel1 */
+  if(sel.length===2){
+    const bis = pbis(pts[sel[0]], pts[sel[1]]);
+    if(bis){
+      drawDash(bis.s, bis.e, '#f59e0b', 2.5, [11,7]);
+      dotAt(bis.m, '#f59e0b', 5);
+    }
+    /* Line between selected */
+    drawSeg(pts[sel[0]], pts[sel[1]], 'rgba(59,130,246,0.5)', 1.5);
+  }
+
+  /* Hr circle */
+  if(Hr && bigR>0){
+    const rp=pxLen(bigR), hp=u2p(Hr.x,Hr.y);
+    ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.arc(hp.px,hp.py,rp,0,2*Math.PI);
+    ctx.strokeStyle='rgba(16,185,129,0.25)'; ctx.lineWidth=1.2; ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  if(!Hr||sel.length<2) return;
+
+  /* A points for selected pair */
+  const sA=[], sMissing=false;
+  for(let i=0;i<2;i++){
+    const ap=cutPt(pts[sel[i]], smR, Hr, bigR);
+    sA.push(ap);
+    if(ap){
+      drawDash(pts[sel[i]], ap, '#ef4444', 1.2, [4,4]);
+      aPoint(ap, `A${sel[i]+1}`);
+    }
+  }
+  if(!sA[0]||!sA[1]) return;
+
+  /* Purple bisector A_sel0-A_sel1 */
+  const pbA = pbis(sA[0], sA[1]);
+  if(pbA) drawDash(pbA.s, pbA.e, '#a855f7', 2.5, [9,6]);
+
+  /* Show Hr label at intersection of orange & purple bisectors */
+  if(pbA){
+    const orangeBis = pbis(pts[sel[0]], pts[sel[1]]);
+    if(orangeBis){
+      const ix = llx(orangeBis, pbA);
+      if(ix){
+        const ip = u2p(ix.x, ix.y);
+        // Dot at intersection
+        ctx.beginPath(); ctx.arc(ip.px, ip.py, 6, 0, 2*Math.PI);
+        ctx.fillStyle = '#10b981'; ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+        ctx.setLineDash([]); ctx.stroke();
+        // "Hr" label
+        ctx.font = 'bold 13px Segoe UI, sans-serif';
+        ctx.fillStyle = '#10b981';
+        ctx.fillText('Hr', ip.px + 10, ip.py - 8);
+        // Coordinates below
+        ctx.font = '10px monospace';
+        ctx.fillStyle = '#64748b';
+        ctx.fillText(`(${ix.x.toFixed(1)}, ${ix.y.toFixed(1)})`, ip.px + 10, ip.py + 6);
+      }
+    }
+  }
+
+  if(!Hc) return;
+
+  /* Hc circle (dashed purple) */
+  const hcR=D(Hc, sA[0]);
+  const hcp=u2p(Hc.x,Hc.y);
+  ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.arc(hcp.px,hcp.py,pxLen(hcR),0,2*Math.PI);
+  ctx.strokeStyle='rgba(168,85,247,0.3)'; ctx.lineWidth=1; ctx.stroke();
+  ctx.setLineDash([]);
+
+  /* A points for other pair — shortest continuous angular path */
+  const other=[];
+  for(let i=0;i<4;i++) if(!sel.includes(i)) other.push(i);
+  const _A3c=ccx(pts[other[0]],smR,Hc,hcR);
+  const _A4c=ccx(pts[other[1]],smR,Hc,hcR);
+  const tempA=[null,null,null,null];
+  tempA[sel[0]]=sA[0]; tempA[sel[1]]=sA[1];
+  const _bp=chooseSequentialA(tempA, other, _A3c, _A4c, Hc);
+  const oA=[_bp.A3,_bp.A4];
+  for(let i=0;i<2;i++){
+    const ap=oA[i];
+    if(ap){
+      drawDash(pts[other[i]],ap,'#ef4444',1.2,[4,4]);
+      aPoint(ap,`A${other[i]+1}`);
+    }
+  }
+  if(!oA[0]||!oA[1]) return;
+
+  /* Congruent triangles — computed but NOT drawn (hidden by user request) */
+  const sC=pts[sel[0]];
+  const cp1=congrSameOrient(pts[other[0]], oA[0], Hr, sC, sA[0]);
+  const cp4=congrSameOrient(pts[other[1]], oA[1], Hr, sC, sA[0]);
+
+  /* Point B */
+  if(cp1&&cp4){
+    const pb1=pbis(cp1,Hr), pb2=pbis(cp4,Hr);
+    const B=llx(pb1,pb2);
+    if(B){
+      /* Static linkage position 1 */
+      bar(Hc, sA[0], '#f97316', 5);
+      fillTri(sA[0], sC, B, 'rgba(16,185,129,0.2)', '#10b981', 3.5);
+      bar(B, Hr, '#3b82f6', 5);
+      groundPin(Hc,'#a855f7');
+      groundPin(Hr,'#10b981');
+      joint(sA[0],'#f97316',9);
+      joint(sC,'#10b981',7);
+      bigJoint(B,'#eab308',12);
+      labelAt(Hc,'Hc','#a855f7',-20,-12);
+      labelAt(Hr,'Hr','#10b981',12,-12);
+      labelAt(sA[0],'A₁','#f97316',10,-12);
+      labelAt(sC,`C${sel[0]+1}`,'#10b981',10,-12);
+      labelAt(B,'B','#eab308',12,-14);
+    }
+  }
+}
+
+function drawAnimFrame(frame){
+  const {A, B, C} = frame;
+  if(!A||!B||!C) return;
+
+  /* Coupler trace */
+  if(tracePoints.length>1){
+    ctx.beginPath();
+    ctx.lineJoin='round';
+    ctx.lineCap='round';
+    let isStart = true;
+    for(let i=0;i<tracePoints.length;i++){
+      const pt = tracePoints[i];
+      if(!pt) { isStart = true; continue; }
+      const p = u2p(pt.x,pt.y);
+      if(isStart) { ctx.moveTo(p.px,p.py); isStart = false; }
+      else { ctx.lineTo(p.px,p.py); }
+    }
+    ctx.strokeStyle='rgba(167,139,250,0.5)';
+    ctx.lineWidth=1.5; ctx.setLineDash([]); ctx.stroke();
+  }
+
+  /* Ghost static positions (all 4 C-A-B) */
+  if(LG&&LG.allA){
+    ctx.globalAlpha=0.15;
+    for(let i=0;i<4;i++){
+      const gA=LG.allA[i]; if(!gA)continue;
+      const gPos=solve4Bar(Math.atan2(gA.y-Hc.y,gA.x-Hc.x), asmb);
+      if(!gPos)continue;
+      const gC=getC(gPos.A,gPos.B);
+      if(!gC)continue;
+      fillTri(gPos.A, gC, gPos.B, '#10b981', '#10b981', 1);
+    }
+    ctx.globalAlpha=1;
+  }
+
+  /* Ground link */
+  bar(Hc, Hr, '#94a3b8', 3);
+
+  /* Crank */
+  bar(Hc, A, '#f97316', 7);
+  /* Coupler triangle */
+  fillTri(A, C, B, 'rgba(16,185,129,0.28)', '#10b981', 5);
+  /* Rocker */
+  bar(B, Hr, '#3b82f6', 7);
+
+  /* Ground pins */
+  groundPin(Hc,'#a855f7');
+  groundPin(Hr,'#10b981');
+
+  /* Moving joints */
+  joint(A,'#f97316',11);
+  joint(C,'#10b981',9);
+  bigJoint(B,'#eab308',13);
+
+  /* Labels */
+  labelAt(Hc,'Hc','#a855f7',-22,-13);
+  labelAt(Hr,'Hr','#10b981',13,-13);
+  labelAt(A,'A','#fb923c',10,-13);
+  labelAt(C,'C','#4ade80',10,-13);
+  labelAt(B,'B','#fbbf24',13,-15);
+
+  /* Show which precision points are nearby */
+  if(LG&&LG.allA){
+    for(let i=0;i<4;i++){
+      const gA=LG.allA[i]; if(!gA)continue;
+      const d=D(A,gA);
+      if(d<3){
+        const p=u2p(pts[i].x,pts[i].y);
+        ctx.beginPath(); ctx.arc(p.px,p.py,20,0,2*Math.PI);
+        ctx.strokeStyle='#facc15'; ctx.lineWidth=2.5;
+        ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]);
+        document.getElementById('animSt').textContent=`✓ At precision point C${i+1}`;
+      }
+    }
+  }
+}
+
+/* ── Drawing helpers ── */
+function drawSeg(p1,p2,color,w){
+  const a=u2p(p1.x,p1.y),b=u2p(p2.x,p2.y);
+  ctx.beginPath();ctx.moveTo(a.px,a.py);ctx.lineTo(b.px,b.py);
+  ctx.strokeStyle=color;ctx.lineWidth=w;ctx.setLineDash([]);ctx.stroke();
+}
+function drawDash(p1,p2,color,w,dash){
+  const a=u2p(p1.x,p1.y),b=u2p(p2.x,p2.y);
+  ctx.beginPath();ctx.moveTo(a.px,a.py);ctx.lineTo(b.px,b.py);
+  ctx.strokeStyle=color;ctx.lineWidth=w;ctx.setLineDash(dash);ctx.stroke();ctx.setLineDash([]);
+}
+function dotAt(p,color,r){
+  const pp=u2p(p.x,p.y);
+  ctx.beginPath();ctx.arc(pp.px,pp.py,r,0,2*Math.PI);
+  ctx.fillStyle=color;ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,0.3)';ctx.lineWidth=1;ctx.stroke();
+}
+function labelAt(p,txt,color,dx,dy){
+  const pp=u2p(p.x,p.y);
+  ctx.font='bold 12px Segoe UI,sans-serif';
+  ctx.fillStyle=color;ctx.fillText(txt,pp.px+(dx||8),pp.py+(dy||-10));
+}
+function aPoint(p,label){
+  dotAt(p,'#ef4444',7);
+  dotAt({x:p.x,y:p.y},'white',3);
+  labelAt(p,label,'#ef4444',9,-7);
+}
+function fillTri(p1,p2,p3,fill,stroke,sw){
+  if(!p1||!p2||!p3)return;
+  const a=u2p(p1.x,p1.y),b=u2p(p2.x,p2.y),c=u2p(p3.x,p3.y);
+  ctx.beginPath();ctx.moveTo(a.px,a.py);ctx.lineTo(b.px,b.py);ctx.lineTo(c.px,c.py);ctx.closePath();
+  ctx.fillStyle=fill;ctx.fill();
+  ctx.strokeStyle=stroke;ctx.lineWidth=sw;ctx.setLineDash([]);ctx.stroke();
+}
+function bar(p1,p2,color,w){
+  if(!p1||!p2)return;
+  const a=u2p(p1.x,p1.y),b=u2p(p2.x,p2.y);
+  ctx.beginPath();ctx.moveTo(a.px,a.py);ctx.lineTo(b.px,b.py);
+  ctx.strokeStyle=color;ctx.lineWidth=w;ctx.lineCap='round';ctx.setLineDash([]);ctx.stroke();
+}
+function joint(p,color,r){
+  const pp=u2p(p.x,p.y);
+  ctx.beginPath();ctx.arc(pp.px,pp.py,r,0,2*Math.PI);ctx.fillStyle='#1e293b';ctx.fill();
+  ctx.strokeStyle=color;ctx.lineWidth=3;ctx.stroke();
+  ctx.beginPath();ctx.arc(pp.px,pp.py,r*0.38,0,2*Math.PI);ctx.fillStyle=color;ctx.fill();
+}
+function bigJoint(p,color,r){
+  const pp=u2p(p.x,p.y);
+  ctx.beginPath();ctx.arc(pp.px,pp.py,r+3,0,2*Math.PI);ctx.fillStyle='#000';ctx.fill();
+  ctx.beginPath();ctx.arc(pp.px,pp.py,r,0,2*Math.PI);ctx.fillStyle=color;ctx.fill();
+  ctx.beginPath();ctx.arc(pp.px,pp.py,r*0.4,0,2*Math.PI);ctx.fillStyle='white';ctx.fill();
+}
+function groundPin(p,color){
+  const pp=u2p(p.x,p.y);
+  ctx.strokeStyle=color; ctx.lineWidth=1.5;
+  for(let i=-12;i<=12;i+=5){
+    ctx.beginPath();ctx.moveTo(pp.px+i,pp.py+12);ctx.lineTo(pp.px+i-4,pp.py+20);ctx.stroke();
+  }
+  ctx.beginPath();ctx.moveTo(pp.px-14,pp.py+12);ctx.lineTo(pp.px+14,pp.py+12);ctx.stroke();
+  ctx.beginPath();ctx.arc(pp.px,pp.py,10,0,2*Math.PI);
+  ctx.fillStyle='#0f172a';ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.stroke();
+  ctx.beginPath();ctx.arc(pp.px,pp.py,4,0,2*Math.PI);ctx.fillStyle=color;ctx.fill();
+}
+function drawCPoints(){
+  for(let i=0;i<pts.length;i++){
+    const p=u2p(pts[i].x,pts[i].y);
+    if(sel.includes(i)){
+      ctx.beginPath();ctx.arc(p.px,p.py,18,0,2*Math.PI);
+      ctx.fillStyle='rgba(251,191,36,0.18)';ctx.fill();
+    }
+    ctx.beginPath();ctx.arc(p.px,p.py,10,0,2*Math.PI);ctx.fillStyle='#3b82f6';ctx.fill();
+    ctx.beginPath();ctx.arc(p.px,p.py,4,0,2*Math.PI);ctx.fillStyle='white';ctx.fill();
+    ctx.strokeStyle='#1e40af';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(p.px,p.py,10,0,2*Math.PI);ctx.stroke();
+    ctx.font='bold 14px Segoe UI'; ctx.fillStyle='#1e40af';
+    ctx.fillText(`C${i+1}`,p.px+12,p.py-12);
+  }
+}
+function drawGridAxes(){
+  ctx.strokeStyle='#e2e8f0';ctx.lineWidth=0.7;
+  const xStart = Math.ceil(X0/20)*20;
+  for(let x=xStart; x<=X1; x+=20){
+    if(x===0)continue;
+    const{px}=u2p(x,0);
+    ctx.beginPath();ctx.moveTo(px,mg.t);ctx.lineTo(px,mg.t+gH);ctx.stroke();
+  }
+  for(let y=-100;y<=100;y+=20){
+    if(y===0)continue;
+    const{py}=u2p(0,y);
+    ctx.beginPath();ctx.moveTo(mg.l,py);ctx.lineTo(mg.l+gW,py);ctx.stroke();
+  }
+  const O=u2p(0,0);
+  ctx.strokeStyle='#334155';ctx.lineWidth=2.5;
+  ctx.beginPath();ctx.moveTo(mg.l,O.py);ctx.lineTo(mg.l+gW,O.py);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(O.px,mg.t);ctx.lineTo(O.px,mg.t+gH);ctx.stroke();
+  ctx.font='bold 14px monospace';ctx.fillStyle='#475569';
+  ctx.fillText('X',W-mg.r+8,O.py+5);
+  ctx.fillText('Y',O.px+6,mg.t-10);
+  ctx.font='11px monospace';ctx.fillStyle='#94a3b8';
+  const xStartLbl = Math.ceil(X0/20)*20;
+  for(let x=xStartLbl; x<=X1; x+=20){
+    if(!x)continue;
+    const{px}=u2p(x,0);ctx.fillText(x,px-8,O.py+15);
+  }
+  for(let y=-100;y<=100;y+=20){
+    if(!y)continue;
+    const{py}=u2p(0,y);ctx.fillText(y,O.px-30,py+4);
+  }
+  ctx.fillText('0',O.px-15,O.py+15);
+}
+
+/* ══ ANIMATION LOOP ══ */
+function animLoop(ts){
+  if(!animating)return;
+  if(!lastT)lastT=ts;
+  const dt=Math.min((ts-lastT)/1000, 0.05); // cap dt to avoid jumps
+  lastT=ts;
+  
+  const dTh = spd * dt;
+  const targetTheta = theta + thetaDir * dTh;
+  let pos = solve4Bar(targetTheta, asmb, prevB);
+  if(!pos){
+    const alt = solve4Bar(targetTheta, 1-asmb, prevB);
+    if(alt){
+      pos = alt;
+      asmb = alt.assembly;
+      document.getElementById('btnA0').style.background = asmb===0 ? '#1d4ed8' : '#1e3a5f';
+      document.getElementById('btnA1').style.background = asmb===1 ? '#1d4ed8' : '#374151';
+    }
+  }
+
+  if(!pos){
+    // No valid geometry at the new theta; try a smaller reversal step instead of flashing an invalid frame.
+    thetaDir *= -1;
+    let smallStep = dTh * 0.25;
+    for(let k=0;k<4 && !pos;k++){
+      const tryTheta = theta + thetaDir * smallStep;
+      pos = solve4Bar(tryTheta, asmb, prevB) || solve4Bar(tryTheta, 1-asmb, prevB);
+      if(pos){
+        theta = tryTheta;
+        if(pos.assembly !== asmb){
+          asmb = pos.assembly;
+          document.getElementById('btnA0').style.background = asmb===0 ? '#1d4ed8' : '#1e3a5f';
+          document.getElementById('btnA1').style.background = asmb===1 ? '#1d4ed8' : '#374151';
+        }
+      } else {
+        smallStep *= 0.5;
+      }
+    }
+  } else {
+    theta = targetTheta;
+    if(pos.assembly !== asmb){
+      asmb = pos.assembly;
+      document.getElementById('btnA0').style.background = asmb===0 ? '#1d4ed8' : '#1e3a5f';
+      document.getElementById('btnA1').style.background = asmb===1 ? '#1d4ed8' : '#374151';
+    }
+  }
+
+  if(pos){
+    prevB = pos.B;
+    prevA = pos.A;
+    const C = getC(pos.A, pos.B);
+    redraw({A:pos.A, B:pos.B, C});
+    const deg = ((theta*180/Math.PI)%360+360)%360;
+    document.getElementById('animSt').textContent=`θ = ${deg.toFixed(1)}°`;
+  } else {
+    document.getElementById('animSt').textContent=`⚠ Invalid geometry`;
+  }
+
+  animId=requestAnimationFrame(animLoop);
+}
+
+function startAnim(){
+  if(!LG){alert('Build the linkage first (need Point B)');return;}
+  computeTrace();
+  animating=true; lastT=null; thetaDir=1;
+  theta=LG.initTheta;
+  prevB = LG.B;
+  prevA = LG.allA?.[sel[0]] ?? null;
+  document.getElementById('btnA0').style.background=asmb===0?'#1d4ed8':'#1e3a5f';
+  document.getElementById('btnA1').style.background=asmb===1?'#1d4ed8':'#374151';
+  document.getElementById('btnAnim').textContent='⏸ Pause';
+  document.getElementById('btnAnim').classList.add('on');
+  animId=requestAnimationFrame(animLoop);
+}
+function stopAnim(){
+  animating=false; cancelAnimationFrame(animId);
+  document.getElementById('btnAnim').textContent='▶ Animate';
+  document.getElementById('btnAnim').classList.remove('on');
+  lastT=null;
+  redraw(null);
+}
+function toggleAnim(){animating?stopAnim():startAnim();}
+function setAssembly(n){
+  asmb=n;
+  document.getElementById('btnA0').style.background=n===0?'#1d4ed8':'#1e3a5f';
+  document.getElementById('btnA1').style.background=n===1?'#1d4ed8':'#374151';
+  if(animating){stopAnim();startAnim();}
+  else{buildLinkage();redraw(null);}
+}
+
+/* ══ UI ══ */
+const STEP_CONTENT = [
+  null, // index 0 unused
+  { badge: 'STEP 1 / 8', text: () => `Click anywhere on the white canvas to drop a point. Place all <b>4 points — C1, C2, C3, C4</b>. <b>(${pts.length} / 4 placed)</b>` },
+  { badge: 'STEP 2 / 8', text: () => 'Click on any <b>2 of your C points</b> to choose them as your <b>base pair</b>. They will glow when selected.' },
+  { badge: 'STEP 3 / 8', text: () => 'An <b>Orange dashed line</b> appeared — the bisector of your base pair. Click <b>anywhere on it</b> to drop <b>Hr</b> (rocker pivot).' },
+  { badge: 'STEP 4 / 8', text: () => 'On the right panel, drag the <b>⚫ Circle Radius R</b> slider. This draws a <b>green dashed circle</b> around Hr. Try different values — when A points appear on it, you are on the right track! Bigger R = bigger mechanism.' },
+  { badge: 'STEP 5 / 8', text: () => { const a0=`A${sel[0]+1}`, a1=`A${sel[1]+1}`; return `📐 Now drag the <b>✂️ Small r</b> slider on the right panel. This draws <b>yellow dashed arcs</b> (circles) from each of your 2 selected C points. 🎯 Your goal: make those arcs <b>touch the green Hr circle</b>. The spots where they cross are called <b>${a0} and ${a1}</b> — these are the moving joints of your mechanism! Keep adjusting r until you see <b>${a0} and ${a1} appear</b> as red dots on screen.`; } },
+  { badge: 'STEP 6 / 8', text: () => { const a0=`A${sel[0]+1}`, a1=`A${sel[1]+1}`; return `Great job! A <b>Purple dashed line</b> now appears — it is the bisector of <b>${a0} and ${a1}</b>. Click <b>anywhere on the purple line</b> to place <b>Hc</b> — the crank pivot point. The spot where the <b>orange and purple lines cross</b> is shown as <b>Hr</b> on the canvas — that is a good place to click!`; } },
+  { badge: 'STEP 7 / 8', text: () => 'Almost done! The tool is now computing more A points from the other 2 C points using the Hc circle. <b>Congruent triangles</b> are built automatically → their bisectors cross → this gives <b>Point B</b> (the fixed rocker pivot). You will see the linkage skeleton appear on screen!' },
+  { badge: 'STEP 8 / 8', text: () => LG ? '🎉 Your four-bar linkage is fully built! Press <b>▶ Animate</b> on the right panel to watch it move. You can also adjust the <b>Speed</b> slider and switch between Open / Crossed assembly. Well done! 🚀' : 'Press <b>▶ Animate</b> on the right to start the animation. If nothing moves, try adjusting the <b>R</b> and <b>r</b> sliders slightly so that A points are visible, then click the Purple line again to re-place Hc.' },
+];
+
+function getMaxStep() {
+  if(pts.length < 4) return 1;
+  if(sel.length < 2) return 2;
+  if(!Hr) return 3;
+  if(!Hc) return 7;
+  return 8;
+}
+
+function stepNav(dir) {
+  const max = getMaxStep();
+  viewStep = Math.max(1, Math.min(max, viewStep + dir));
+  updateSteps();
+}
+
+function updateSteps() {
+  const max = getMaxStep();
+  // Only clamp downward (e.g. Hr removed resets to step 3)
+  if(viewStep > max) viewStep = max;
+
+  const badge = document.getElementById('stepBadge');
+  const text  = document.getElementById('stepText');
+  const backBtn = document.getElementById('stepBack');
+  const fwdBtn  = document.getElementById('stepFwd');
+
+  const entry = STEP_CONTENT[viewStep];
+  if(LG && viewStep === 8) {
+    badge.className = 'step-badge done-all';
+  } else {
+    badge.className = 'step-badge';
+  }
+  badge.textContent = entry.badge;
+  text.innerHTML = entry.text();
+
+  backBtn.disabled = viewStep <= 1;
+  fwdBtn.disabled  = viewStep >= max;
+}
+
+function updateUI(){
+  updateSteps();
+  const pd=document.getElementById('plist');
+  pd.innerHTML=!pts.length
+    ?'<div style="color:#475569;text-align:center;font-size:.7rem">✨ Click to add C1–C4</div>'
+    :pts.map((p,i)=>`<div class="pi"><b>C${i+1}${sel.includes(i)?' ✓':''}</b><span>(${p.x.toFixed(0)},${p.y.toFixed(0)})</span></div>`).join('');
+
+  const ss=document.getElementById('ssel');
+  ss.innerHTML=sel.length===2&&pts.length===4
+    ?`<span class="badge b-amber">C${sel[0]+1} & C${sel[1]+1} selected</span><p style="margin-top:3px">Base pair</p>`
+    :'<span>⚪ Select 2 base points</span><p style="margin-top:3px">Click any 2 C points</p>';
+
+  const sh=document.getElementById('shr');
+  if(Hr&&sel.length===2&&pts.length===4){
+    sh.innerHTML=`<span class="badge b-green">Hr(${Hr.x.toFixed(0)},${Hr.y.toFixed(0)})</span><p style="margin-top:3px">Drag to reposition</p>`;
+    document.getElementById('ctrlR').style.display='block';
+    document.getElementById('ctrlr').style.display='block';
+    document.getElementById('shc').style.display='block';
+    document.getElementById('vR').textContent=`${bigR} units`;
+    document.getElementById('vr').textContent=`${smR} units`;
+    if(Hc){
+      document.getElementById('hcTxt').textContent=`Hc(${Hc.x.toFixed(0)},${Hc.y.toFixed(0)})`;
+      document.getElementById('btnRmHc').style.display='block';
+    } else {
+      document.getElementById('hcTxt').textContent='Click purple bisector for Hc';
+      document.getElementById('btnRmHc').style.display='none';
+    }
+  } else {
+    sh.innerHTML='<span>📍 Hr: not placed</span><p style="margin-top:3px">Select 2 points first</p>';
+    document.getElementById('ctrlR').style.display='none';
+    document.getElementById('ctrlr').style.display='none';
+    document.getElementById('shc').style.display='none';
+    document.getElementById('ibox').style.display='none';
+    document.getElementById('lbox').style.display='none';
+    document.getElementById('btnAnim').disabled=true;
+  }
+  if(!LG){
+    document.getElementById('ibox').style.display='none';
+    document.getElementById('lbox').style.display='none';
+    document.getElementById('btnAnim').disabled=true;
+  }
+}
+
+function toggleSel(i){
+  if(sel.includes(i)) sel=sel.filter(x=>x!==i);
+  else{if(sel.length>=2)sel.shift(); sel.push(i);}
+  Hr=null;Hc=null;LG=null;
+  if(animating)stopAnim();
+  redraw();
+}
+
+/* ══ MOUSE ══ */
+function getXY(e){
+  const r=cv.getBoundingClientRect();
+  const sx=cv.width/r.width, sy=cv.height/r.height;
+  return{mx:Math.min(W,Math.max(0,(e.clientX-r.left)*sx)), my:Math.min(H,Math.max(0,(e.clientY-r.top)*sy))};
+}
+function hitTest(mx,my){
+  if(Hc){const p=u2p(Hc.x,Hc.y);if(Math.hypot(p.px-mx,p.py-my)<16)return'hc';}
+  if(Hr){const p=u2p(Hr.x,Hr.y);if(Math.hypot(p.px-mx,p.py-my)<16)return'hr';}
+  for(let i=0;i<pts.length;i++){const p=u2p(pts[i].x,pts[i].y);if(Math.hypot(p.px-mx,p.py-my)<14)return i;}
+  return-1;
+}
+
+cv.addEventListener('mousedown',e=>{
+  if(animating)return;
+  const{mx,my}=getXY(e);
+  const h=hitTest(mx,my);
+  if(h==='hc'){isDrHc=true;e.preventDefault();return;}
+  if(h==='hr'){isDrHr=true;e.preventDefault();return;}
+  if(typeof h==='number'&&h>=0){
+    toggleSel(h);
+    dragging=h;
+    const pp=u2p(pts[h].x,pts[h].y);
+    drOff={x:pp.px-mx,y:pp.py-my};
+    e.preventDefault();return;
+  }
+  /* Place Hr on orange bisector */
+  if(sel.length===2&&!Hr&&pts.length===4){
+    const bis=pbis(pts[sel[0]],pts[sel[1]]);
+    if(bis){const u=p2u(mx,my);const proj=projOnLine(u,bis);if(proj){Hr=proj;viewStep=4;redraw();return;}}
+  }
+  /* Place Hc on purple bisector */
+  if(Hr&&pts.length===4&&!Hc&&sel.length===2){
+    const ap0=cutPt(pts[sel[0]],smR,Hr,bigR);
+    const ap1=cutPt(pts[sel[1]],smR,Hr,bigR);
+    if(ap0&&ap1){
+      const pb=pbis(ap0,ap1);
+      if(pb){
+        const u=p2u(mx,my);const proj=projOnLine(u,pb);
+        if(proj){const pp=u2p(proj.x,proj.y);if(Math.hypot(pp.px-mx,pp.py-my)<20){Hc=proj;viewStep=8;buildLinkage();redraw();return;}}
+      }
+    }
+  }
+  /* Add C point */
+  if(pts.length<4){const u=p2u(mx,my);pts.push(u);redraw();}
+});
+
+window.addEventListener('mousemove',e=>{
+  if(animating)return;
+  const{mx,my}=getXY(e);
+  if(isDrHc&&Hc&&sel.length===2){
+    const ap0=cutPt(pts[sel[0]],smR,Hr,bigR);
+    const ap1=cutPt(pts[sel[1]],smR,Hr,bigR);
+    if(ap0&&ap1){const pb=pbis(ap0,ap1);if(pb){const proj=projOnLine(p2u(mx,my),pb);if(proj){Hc=proj;LG=null;buildLinkage();redraw();}}}
+    return;
+  }
+  if(isDrHr&&Hr&&sel.length===2){
+    const bis=pbis(pts[sel[0]],pts[sel[1]]);
+    if(bis){const proj=projOnLine(p2u(mx,my),bis);if(proj){Hr=proj;Hc=null;LG=null;redraw();}}
+    return;
+  }
+  if(dragging!==null&&pts[dragging]){
+    const dpx=Math.min(mg.l+gW,Math.max(mg.l,mx+drOff.x));
+    const dpy=Math.min(mg.t+gH,Math.max(mg.t,my+drOff.y));
+    pts[dragging]=p2u(dpx,dpy);
+    Hr=null;Hc=null;LG=null;redraw();
+  }
+});
+window.addEventListener('mouseup',()=>{dragging=null;isDrHr=false;isDrHc=false;});
+
+/* ══ CONTROLS ══ */
+document.getElementById('btnAnim').addEventListener('click',toggleAnim);
+document.getElementById('slSpd').addEventListener('input',function(){
+  spd=parseFloat(this.value);
+  document.getElementById('vSpd').textContent=spd.toFixed(1)+'×';
+});
+document.getElementById('slR').addEventListener('input',function(){
+  bigR=parseInt(this.value);document.getElementById('vR').textContent=bigR+' units';
+  Hc=null;LG=null;if(animating)stopAnim();redraw();
+});
+document.getElementById('slr').addEventListener('input',function(){
+  smR=parseInt(this.value);document.getElementById('vr').textContent=smR+' units';
+  Hc=null;LG=null;if(animating)stopAnim();redraw();
+});
+document.getElementById('btnClear').addEventListener('click',()=>{
+  pts=[];sel=[];Hr=null;Hc=null;LG=null;bigR=50;smR=60;
+  if(animating)stopAnim();
+  document.getElementById('slR').value=50;document.getElementById('slr').value=60;
+  redraw();
+});
+document.getElementById('btnClearSel').addEventListener('click',()=>{
+  sel=[];Hr=null;Hc=null;LG=null;if(animating)stopAnim();redraw();
+});
+document.getElementById('btnRmHr').addEventListener('click',()=>{
+  Hr=null;Hc=null;LG=null;if(animating)stopAnim();redraw();
+});
+document.getElementById('btnRmHc').addEventListener('click',()=>{
+  Hc=null;LG=null;if(animating)stopAnim();redraw();
+});
+
+/* ══ INIT ══ */
+resize();
+</script>
+
+<!-- ═══ VIKAS × AI BADGE + CREDITS POPUP ═══ -->
+<style>
+#vikas-badge{
+  position:fixed;bottom:14px;left:16px;z-index:8888;
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 11px 5px 8px;
+  background:rgba(8,14,30,.72);
+  border:1px solid transparent;
+  border-radius:30px;
+  backdrop-filter:blur(10px);
+  font-family:'Inter','Segoe UI',sans-serif;
+  cursor:pointer;
+  box-shadow:0 0 0 1px rgba(139,92,246,.35),0 4px 18px rgba(0,0,0,.45);
+  transition:box-shadow .3s,transform .25s;
+  user-select:none;
+}
+#vikas-badge:hover{
+  box-shadow:0 0 0 1.5px rgba(139,92,246,.6),0 0 0 4px rgba(99,102,241,.12),0 6px 22px rgba(0,0,0,.5);
+  transform:translateY(-1px);
+}
+.vb-spark{font-size:10px;line-height:1;filter:drop-shadow(0 0 4px #a78bfa);}
+.vb-text{
+  font-size:10.5px;font-weight:300;letter-spacing:.04em;
+  background:linear-gradient(90deg,#93c5fd,#c4b5fd);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  white-space:nowrap;
+}
+.vb-copy{font-size:9px;font-weight:300;color:#c4b5fd;-webkit-text-fill-color:#c4b5fd;opacity:.75;margin-left:2px;}
+
+#credits-popup{
+  position:fixed;bottom:52px;left:16px;z-index:8889;
+  width:240px;
+  background:rgba(8,14,30,.88);
+  border:1px solid rgba(139,92,246,.3);
+  border-radius:14px;
+  padding:16px 18px;
+  box-shadow:0 8px 32px rgba(0,0,0,.55),0 0 0 1px rgba(139,92,246,.15);
+  backdrop-filter:blur(18px);
+  font-family:'Inter','Segoe UI',sans-serif;
+  opacity:0;pointer-events:none;
+  transform:translateY(8px) scale(.97);
+  transition:opacity .22s ease,transform .22s cubic-bezier(.34,1.3,.64,1);
+}
+#credits-popup.open{opacity:1;pointer-events:all;transform:translateY(0) scale(1);}
+.cp-title{
+  font-size:9px;font-weight:700;letter-spacing:.1em;
+  color:rgba(148,163,184,.45);margin-bottom:12px;
+  text-transform:uppercase;
+}
+.cp-row{display:flex;flex-direction:column;gap:8px;}
+.cp-item{
+  display:flex;flex-direction:column;gap:2px;
+  padding-bottom:8px;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+.cp-item:last-child{border-bottom:none;padding-bottom:0;}
+.cp-name{
+  font-size:11px;font-weight:600;
+  background:linear-gradient(90deg,#93c5fd,#c4b5fd);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.cp-desc{font-size:10px;font-weight:300;color:rgba(148,163,184,.7);line-height:1.5;}
+.cp-footer{
+  margin-top:12px;font-size:9px;font-weight:300;
+  color:rgba(148,163,184,.35);text-align:center;letter-spacing:.03em;
+}
+</style>
+
+<div id="credits-popup">
+  <div class="cp-title">Credits</div>
+  <div class="cp-row">
+    <div class="cp-item">
+      <span class="cp-name">Vikas</span>
+      <span class="cp-desc">Developer</span>
+    </div>
+    <div class="cp-item">
+      <span class="cp-name">AI&#8209;assisted</span>
+      <span class="cp-desc">4-bar synthesis, animation engine, bisector logic</span>
+    </div>
+    <div class="cp-item">
+      <span class="cp-name">Tools</span>
+      <span class="cp-desc">Antigravity &nbsp;&middot;&nbsp; ChatGPT</span>
+    </div>
+  </div>
+  <div class="cp-footer">Built with AI support &nbsp;&#10022;</div>
+</div>
+
+<div id="vikas-badge" onclick="toggleCredits(event)">
+  <span class="vb-spark">&#10022;</span>
+  <span class="vb-text">Vikas &times; AI</span>
+  <span class="vb-copy">&copy;</span>
+</div>
+
+<script>
+(function(){
+  function toggleCredits(e){
+    e.stopPropagation();
+    document.getElementById('credits-popup').classList.toggle('open');
+  }
+  window.toggleCredits = toggleCredits;
+  document.addEventListener('click', function(e){
+    var p = document.getElementById('credits-popup');
+    var b = document.getElementById('vikas-badge');
+    if(p && !p.contains(e.target) && !b.contains(e.target)){
+      p.classList.remove('open');
+    }
+  });
+})();
+</script>
+</body>
+</html>
