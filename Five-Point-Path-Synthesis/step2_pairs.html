@@ -1,0 +1,1423 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>5-Point Synthesis | Step 2 — Select Pairs & Find Hr</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+
+  :root {
+    --bg-deep:     #060d1a;
+    --bg-panel:    #0b1628;
+    --bg-card:     #0f1f35;
+    --bg-hover:    #162540;
+    --border:      #1e3352;
+    --border-hi:   #2d4f7a;
+    --text-bright: #e2eaf6;
+    --text-muted:  #64748b;
+    --text-dim:    #3a5070;
+    --accent:      #3b82f6;
+    --green:       #10b981;
+    --amber:       #f59e0b;
+    --purple:      #a855f7;
+    --red:         #ef4444;
+    --pair1-color: #06b6d4;   
+    --pair2-color: #f97316;   
+    --hr-color:    #10b981;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-deep);
+    height: 100vh; width: 100vw;
+    overflow: hidden;
+    display: flex;
+    color: var(--text-bright);
+  }
+
+  .sidebar {
+    width: 300px; min-width: 300px;
+    height: 100vh;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sidebar-header {
+    padding: 18px 18px 14px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #0d1e38 0%, var(--bg-panel) 100%);
+  }
+  .step-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(6,182,212,0.12);
+    border: 1px solid rgba(6,182,212,0.3);
+    border-radius: 20px; padding: 3px 10px;
+    font-size: .68rem; font-weight: 600; color: var(--pair1-color);
+    letter-spacing: .06em; margin-bottom: 10px;
+  }
+  .sidebar-header h1 { font-size: 1rem; font-weight: 700; color: var(--text-bright); }
+  .sidebar-header h1 span { color: var(--pair1-color); }
+  .sidebar-header p { font-size: .7rem; color: var(--text-muted); margin-top: 5px; line-height: 1.5; }
+
+  .sidebar-body {
+    flex: 1; overflow-y: auto; padding: 14px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .sidebar-body::-webkit-scrollbar { width: 4px; }
+  .sidebar-body::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
+
+  .sec-label {
+    font-size: .64rem; font-weight: 600; letter-spacing: .1em;
+    color: var(--text-dim); text-transform: uppercase;
+    padding-bottom: 5px; border-bottom: 1px solid var(--border);
+  }
+
+  .status-card {
+    background: var(--bg-card);
+    border-radius: 10px; padding: 12px 14px;
+    border: 1px solid var(--border);
+  }
+  .sc-title {
+    font-size: .7rem; font-weight: 600; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .sc-step { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+  .sc-num {
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .65rem; font-weight: 700; flex-shrink: 0;
+  }
+  .sc-num.done   { background: var(--green); color: #fff; }
+  .sc-num.active { background: var(--accent); color: #fff; animation: pulse 1.4s ease-in-out infinite; }
+  .sc-num.wait   { background: var(--bg-deep); color: var(--text-dim); border: 1.5px solid var(--border); }
+  .sc-text { font-size: .72rem; color: var(--text-muted); }
+  .sc-text strong { color: var(--text-bright); font-size: .75rem; }
+
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.5} }
+
+  .pair-card {
+    background: var(--bg-card); border-radius: 10px;
+    padding: 11px 13px; border: 1px solid var(--border);
+    transition: border-color .2s;
+  }
+  .pair-card.active { border-color: var(--pair1-color)44; }
+  .pair-card.pair2.active { border-color: var(--pair2-color)44; }
+  .pair-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 7px;
+  }
+  .pair-badge {
+    padding: 2px 9px; border-radius: 10px;
+    font-size: .65rem; font-weight: 700; letter-spacing: .04em;
+  }
+  .pair1-badge { background: rgba(6,182,212,.15); color: var(--pair1-color); border: 1px solid rgba(6,182,212,.25); }
+  .pair2-badge { background: rgba(249,115,22,.15); color: var(--pair2-color); border: 1px solid rgba(249,115,22,.25); }
+  .pair-pts {
+    display: flex; gap: 6px; align-items: center;
+    min-height: 28px;
+  }
+  .pair-pt-chip {
+    display: flex; align-items: center; gap: 5px;
+    background: var(--bg-deep); border-radius: 7px;
+    padding: 4px 9px; border: 1px solid var(--border);
+    font-size: .72rem; font-weight: 600;
+    transition: all .2s;
+  }
+  .pair-pt-chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .pair-connector {
+    color: var(--text-dim); font-size: .8rem; font-weight: 700;
+  }
+  .pair-empty {
+    font-size: .68rem; color: var(--text-dim); font-style: italic;
+  }
+  .pair-coord {
+    margin-top: 6px; font-family: 'JetBrains Mono', monospace;
+    font-size: .62rem; color: var(--text-muted);
+    padding-left: 2px;
+  }
+
+  .hr-card {
+    background: var(--bg-card); border-radius: 10px;
+    padding: 12px 14px; border: 1px solid var(--border);
+    border-left: 3px solid var(--hr-color);
+    opacity: 0.4; transition: opacity .4s;
+  }
+  .hr-card.visible { opacity: 1; }
+  .hr-title {
+    font-size: .72rem; font-weight: 700; color: var(--hr-color);
+    display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
+  }
+  .hr-coord {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .8rem; font-weight: 600; color: var(--text-bright);
+    background: var(--bg-deep); border-radius: 6px;
+    padding: 5px 10px; text-align: center;
+  }
+  .hr-desc { font-size: .65rem; color: var(--text-muted); margin-top: 5px; }
+
+  .instr-card {
+    background: var(--bg-card); border-radius: 10px;
+    padding: 11px 13px; border: 1px solid var(--border);
+    border-left: 3px solid var(--amber);
+  }
+  .instr-card .ic-title {
+    font-size: .7rem; font-weight: 600; color: var(--amber);
+    margin-bottom: 5px; display: flex; align-items: center; gap: 5px;
+  }
+  .instr-card ul { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+  .instr-card ul li {
+    font-size: .67rem; color: var(--text-muted);
+    padding-left: 12px; position: relative;
+  }
+  .instr-card ul li::before { content: '→'; position: absolute; left: 0; color: var(--amber); }
+
+  .btn-group { display: flex; flex-direction: column; gap: 7px; }
+  .btn {
+    width: 100%; padding: 10px 14px; border: none; border-radius: 10px;
+    font-family: 'Inter', sans-serif; font-size: .75rem; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    letter-spacing: .02em;
+  }
+  .btn:hover { transform: translateY(-1px); filter: brightness(1.12); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; transform: none !important; filter: none !important; }
+  .btn-primary {
+    background: linear-gradient(135deg, #1d4ed8, #2563eb); color: #fff;
+    box-shadow: 0 4px 15px rgba(37,99,235,.35);
+  }
+  .btn-primary.ready {
+    background: linear-gradient(135deg, #059669, #10b981);
+    box-shadow: 0 4px 15px rgba(16,185,129,.4);
+    animation: glow-green 2s ease-in-out infinite;
+  }
+  @keyframes glow-green {
+    0%,100%{ box-shadow: 0 4px 15px rgba(16,185,129,.4); }
+    50%    { box-shadow: 0 4px 28px rgba(16,185,129,.7); }
+  }
+  .btn-secondary {
+    background: var(--bg-card); color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { color: var(--text-bright); border-color: var(--border-hi); }
+  .btn-danger {
+    background: rgba(127,29,29,.4); color: #fca5a5;
+    border: 1px solid rgba(239,68,68,.2);
+  }
+  .btn-danger:hover { background: rgba(127,29,29,.7); }
+
+  .sidebar-footer {
+    padding: 12px 14px; border-top: 1px solid var(--border);
+    background: var(--bg-deep);
+  }
+  .coord-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .65rem; color: var(--text-dim); text-align: center;
+  }
+
+  .canvas-wrap {
+    flex: 1; position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  canvas { display: block; cursor: crosshair; }
+
+  #cursor-tip {
+    position: fixed; padding: 5px 10px;
+    background: rgba(11,22,40,.92);
+    border: 1px solid var(--border-hi); border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace; font-size: .65rem;
+    color: var(--text-bright); pointer-events: none;
+    opacity: 0; transition: opacity .15s; z-index: 999; white-space: nowrap;
+  }
+  #cursor-tip.visible { opacity: 1; }
+
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: #7f1d1d; border: 1px solid #ef4444; border-radius: 8px;
+    padding: 10px 18px; font-size: .75rem; color: #fca5a5;
+    pointer-events: none; opacity: 0;
+    transition: opacity .3s;
+    z-index: 9999; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="step-badge">
+      <svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="currentColor"/></svg>
+      STEP 2 OF 3
+    </div>
+    <h1>Select <span>Pairs</span> → Hr</h1>
+    <p>Choose 2 pairs of C-points. The perpendicular bisectors of each pair intersect at <strong style="color:var(--hr-color)">Hr</strong>.</p>
+  </div>
+
+  <div class="sidebar-body">
+
+    <div class="sec-label">Selection Progress</div>
+
+    <div class="status-card">
+      <div class="sc-title" id="sc-title">
+        <span id="sc-icon"></span> <span id="sc-msg">Click any two C-points for Pair 1</span>
+      </div>
+      <div class="sc-step">
+        <div class="sc-num active" id="sn1">1</div>
+        <div class="sc-text">Select <strong>Pair 1</strong> — 2 C-points</div>
+      </div>
+      <div class="sc-step">
+        <div class="sc-num wait" id="sn2">2</div>
+        <div class="sc-text">Select <strong>Pair 2</strong> — 2 different C-points</div>
+      </div>
+      <div class="sc-step">
+        <div class="sc-num wait" id="sn3">3</div>
+        <div class="sc-text">Bisectors intersect → <strong style="color:var(--hr-color)">Hr found</strong></div>
+      </div>
+    </div>
+
+    <div class="sec-label">Pairs</div>
+
+    <div class="pair-card active" id="pc1">
+      <div class="pair-header">
+        <div class="pair-badge pair1-badge">Pair 1</div>
+        <span style="font-size:.65rem;color:var(--text-dim)">Cyan bisector</span>
+      </div>
+      <div class="pair-pts" id="pp1">
+        <span class="pair-empty">Click two C-points…</span>
+      </div>
+      <div class="pair-coord" id="pb1-coord" style="display:none"></div>
+    </div>
+
+    <div class="pair-card pair2" id="pc2">
+      <div class="pair-header">
+        <div class="pair-badge pair2-badge">Pair 2</div>
+        <span style="font-size:.65rem;color:var(--text-dim)">Orange bisector</span>
+      </div>
+      <div class="pair-pts" id="pp2">
+        <span class="pair-empty">Complete Pair 1 first…</span>
+      </div>
+      <div class="pair-coord" id="pb2-coord" style="display:none"></div>
+    </div>
+
+    <div class="hr-card" id="hr-card">
+      <div class="hr-title">
+        <svg width="13" height="13" viewBox="0 0 13 13"><circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="6.5" cy="6.5" r="2" fill="currentColor"/></svg>
+        Hr — Rocker Pivot
+      </div>
+      <div class="hr-coord" id="hr-coord">—</div>
+      <div class="hr-desc">Intersection of the two perpendicular bisectors</div>
+    </div>
+
+    <div class="instr-card">
+      <div class="ic-title">
+        <svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 1a5 5 0 100 10A5 5 0 006 1zm0 2a.75.75 0 110 1.5A.75.75 0 016 3zm-.25 2.5h.5c.28 0 .5.22.5.5v3a.5.5 0 01-1 0V6.5h-.25a.5.5 0 010-1H5.75z" fill="currentColor"/></svg>
+        Instructions
+      </div>
+      <ul>
+        <li>Click any 2 C-points to form Pair 1 (cyan bisector)</li>
+        <li>Click 2 more C-points (different) for Pair 2 (orange)</li>
+        <li>Each point can only be in one pair</li>
+        <li>Hr = intersection of both perpendicular bisectors</li>
+        <li>Use "Reset Pairs" to start over</li>
+      </ul>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-primary" id="btn-next" disabled>
+        <svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1l6 6-6 6M1 7h12" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Proceed to Step 3
+      </button>
+      <button class="btn btn-secondary" id="btn-undo">
+        <svg width="13" height="13" viewBox="0 0 13 13"><path d="M2 6.5C2 4 4 2 6.5 2c1.5 0 2.8.7 3.7 1.8M2 2v4.5h4.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Undo Last Selection
+      </button>
+      <button class="btn btn-secondary" id="btn-reset-pairs">
+        <svg width="13" height="13" viewBox="0 0 13 13"><path d="M2 6.5C2 4 4 2 6.5 2c1.5 0 2.8.7 3.7 1.8M2 2v4.5h4.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Reset Pairs
+      </button>
+      <button class="btn btn-danger" id="btn-back">
+        ← Back to Step 1
+      </button>
+    </div>
+
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="coord-display" id="live-coord">Hover over a C-point to see its coordinates</div>
+  </div>
+</aside>
+
+<main class="canvas-wrap" id="canvas-wrap">
+  <canvas id="cv"></canvas>
+</main>
+
+<div id="cursor-tip"></div>
+<div id="toast"></div>
+
+<script>
+const nav = performance.getEntriesByType("navigation")[0];
+if (nav && nav.type === "reload") {
+  sessionStorage.clear();
+  window.location.href = 'step1_points.html';
+}
+
+let pts = [];
+try {
+  const saved = sessionStorage.getItem('fivepoint_pts');
+  if(saved) pts = JSON.parse(saved);
+} catch(e){}
+
+if(!pts || pts.length < 5){
+  window.location.href = 'step1_points.html';
+}
+
+const POINT_COLORS = ['#3b82f6','#10b981','#f59e0b','#a855f7','#ef4444'];
+const POINT_NAMES  = ['C1','C2','C3','C4','C5'];
+const PAIR1_COLOR  = '#06b6d4';
+const PAIR2_COLOR  = '#f97316';
+const HR_COLOR     = '#10b981';
+const HIT_RADIUS   = 22; 
+const MIN_DIST_U   = 12; 
+
+const cv   = document.getElementById('cv');
+const ctx  = cv.getContext('2d');
+const wrap = document.getElementById('canvas-wrap');
+
+let W=0, H=0, gW=0, gH=0;
+const mg = {t:60, r:60, b:60, l:80};
+let X0=-160, X1=160, Y0=-100, Y1=100;
+
+let isViewPanning = false;
+let viewDragStart = null;
+let panX0_start = 0, panX1_start = 0;
+let panY0_start = 0, panY1_start = 0;
+
+function u2p(x,y){ return { px: mg.l+(x-X0)/(X1-X0)*gW, py: mg.t+gH-(y-Y0)/(Y1-Y0)*gH }; }
+function p2u(px,py){ return { x:X0+(px-mg.l)/gW*(X1-X0), y:Y0+(mg.t+gH-py)/gH*(Y1-Y0) }; }
+
+function resize(){
+  const rect = wrap.getBoundingClientRect();
+  W = rect.width; H = rect.height;
+  cv.width = W; cv.height = H;
+  cv.style.width = W+'px'; cv.style.height = H+'px';
+  gW = W-mg.l-mg.r; gH = H-mg.t-mg.b;
+  const aspect = gW/gH;
+  const ySpan  = Y1-Y0;
+  const midX = (X0 + X1) / 2;
+  X0 = midX - (aspect*ySpan)/2;
+  X1 = midX + (aspect*ySpan)/2;
+  redraw();
+}
+window.addEventListener('resize', resize);
+
+let selState = 0;
+let pair1 = [null, null]; 
+let pair2 = [null, null];
+let Hr    = null;
+let hoveredIdx = -1;
+
+let dragging     = null;  
+let dragStartPx  = 0;     
+let dragStartPy  = 0;
+let didDrag      = false; 
+
+function dist2(p1, p2){ return Math.hypot(p1.x-p2.x, p1.y-p2.y); }
+
+function perpBisector(p1, p2){
+  const mx = (p1.x+p2.x)/2, my = (p1.y+p2.y)/2;
+  const dx = p2.x-p1.x,     dy = p2.y-p1.y;
+  const len = Math.hypot(dx,dy);
+  if(len < 1e-9) return null;
+  const nx = -dy/len, ny = dx/len; 
+  const ext = 800;
+  return {
+    s: {x: mx-nx*ext, y: my-ny*ext},
+    e: {x: mx+nx*ext, y: my+ny*ext},
+    m: {x: mx, y: my}
+  };
+}
+
+function lineIntersect(l1, l2){
+  const x1=l1.s.x, y1=l1.s.y, x2=l1.e.x, y2=l1.e.y;
+  const x3=l2.s.x, y3=l2.s.y, x4=l2.e.x, y4=l2.e.y;
+  const d = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4);
+  if(Math.abs(d) < 1e-9) return null;
+  const t = ((x1-x3)*(y3-y4) - (y1-y3)*(x3-x4)) / d;
+  return {x: x1+t*(x2-x1), y: y1+t*(y2-y1)};
+}
+
+function hitPoint(canvPx, canvPy){
+  let best = -1, bestD = Infinity;
+  for(let i=0; i<pts.length; i++){
+    const {px,py} = u2p(pts[i].x, pts[i].y);
+    const d = Math.hypot(canvPx-px, canvPy-py);
+    if(d < HIT_RADIUS && d < bestD){ bestD=d; best=i; }
+  }
+  return best;
+}
+
+function hasCollision(nx, ny, excludeIdx){
+  for(let i=0; i<pts.length; i++){
+    if(i === excludeIdx) continue;
+    if(Math.hypot(nx-pts[i].x, ny-pts[i].y) < MIN_DIST_U) return true;
+  }
+  return false;
+}
+
+function tryRecomputeHr(){
+  if(pair1[0]===null||pair1[1]===null||pair2[0]===null||pair2[1]===null) return;
+  const b1 = perpBisector(pts[pair1[0]], pts[pair1[1]]);
+  const b2 = perpBisector(pts[pair2[0]], pts[pair2[1]]);
+  if(!b1||!b2){ Hr=null; return; }
+  Hr = lineIntersect(b1, b2) || null;
+  if(Hr){
+    sessionStorage.setItem('fivepoint_Hr',    JSON.stringify(Hr));
+    sessionStorage.setItem('fivepoint_pair1', JSON.stringify(pair1));
+    sessionStorage.setItem('fivepoint_pair2', JSON.stringify(pair2));
+  }
+}
+
+cv.addEventListener('contextmenu', e => e.preventDefault());
+
+cv.addEventListener('mousedown', e => {
+  if (e.button === 1 || e.button === 2 || e.shiftKey) {
+    isViewPanning = true;
+    viewDragStart = { x: e.clientX, y: e.clientY };
+    panX0_start = X0; panX1_start = X1;
+    panY0_start = Y0; panY1_start = Y1;
+    cv.style.cursor = 'move';
+    e.preventDefault();
+    return;
+  }
+
+  const rect = cv.getBoundingClientRect();
+  const px = e.clientX - rect.left;
+  const py = e.clientY - rect.top;
+  const idx = hitPoint(px, py);
+  if(idx >= 0){
+    dragging    = idx;
+    dragStartPx = px;
+    dragStartPy = py;
+    didDrag     = false;
+    cv.style.cursor = 'grabbing';
+    e.preventDefault();
+  }
+});
+
+cv.addEventListener('mouseup', (e) => {
+  if(isViewPanning) {
+    isViewPanning = false;
+    cv.style.cursor = 'crosshair';
+    if(Math.hypot(e.clientX - viewDragStart.x, e.clientY - viewDragStart.y) > 2){
+      didDrag = true; 
+    }
+  }
+  if(dragging !== null){
+    dragging = null;
+    cv.style.cursor = hoveredIdx >= 0 ? 'grab' : 'pointer';
+  }
+});
+
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  const zoomFactor = 1.05;
+  const factor = e.deltaY < 0 ? 1/zoomFactor : zoomFactor;
+  
+  const rect = cv.getBoundingClientRect();
+  const px = e.clientX - rect.left;
+  const py = e.clientY - rect.top;
+  const u = p2u(px, py);
+
+  const spanX = X1 - X0;
+  const spanY = Y1 - Y0;
+  const newSpanX = spanX * factor;
+  const newSpanY = spanY * factor;
+  
+  X0 = u.x - ((px - mg.l) / gW) * newSpanX;
+  X1 = X0 + newSpanX;
+  Y0 = u.y - ((mg.t + gH - py) / gH) * newSpanY;
+  Y1 = Y0 + newSpanY;
+  
+  redraw();
+}, { passive: false });
+
+cv.addEventListener('click', e => {
+  if(didDrag){ didDrag = false; return; }  
+  if(selState >= 4) return;
+  const rect = cv.getBoundingClientRect();
+  const px = e.clientX - rect.left;
+  const py = e.clientY - rect.top;
+  const idx = hitPoint(px, py);
+  if(idx < 0) return;
+
+  if(selState === 0){
+    pair1[0] = idx;
+    selState = 1;
+  } else if(selState === 1){
+    if(idx === pair1[0]){ showToast('Pick a different point for Pair 1'); return; }
+    pair1[1] = idx;
+    selState = 2;
+  } else if(selState === 2){
+    if(pair1.includes(idx)){ showToast('This point is already in Pair 1'); return; }
+    pair2[0] = idx;
+    selState = 3;
+  } else if(selState === 3){
+    if(pair1.includes(idx)){ showToast('This point is already in Pair 1'); return; }
+    if(idx === pair2[0]){ showToast('Pick a different point for Pair 2'); return; }
+    pair2[1] = idx;
+    selState = 4;
+    computeHr();
+  }
+
+  updateSidebar();
+  redraw();
+});
+
+const tip = document.getElementById('cursor-tip');
+const liveCoord = document.getElementById('live-coord');
+
+cv.addEventListener('mousemove', e => {
+  if (isViewPanning) {
+    const dx = e.clientX - viewDragStart.x;
+    const dy = e.clientY - viewDragStart.y;
+    const du_x = dx * (panX1_start - panX0_start) / gW;
+    const du_y = dy * (panY1_start - panY0_start) / gH;
+    
+    X0 = panX0_start - du_x;
+    X1 = panX1_start - du_x;
+    Y0 = panY0_start + du_y;
+    Y1 = panY1_start + du_y;
+    redraw();
+    return;
+  }
+
+  const rect = cv.getBoundingClientRect();
+  const px = e.clientX - rect.left;
+  const py = e.clientY - rect.top;
+
+  if(dragging !== null){
+    const moved = Math.hypot(px - dragStartPx, py - dragStartPy);
+    if(moved > 5) didDrag = true;
+    if(didDrag){
+      const u  = p2u(px, py);
+      const nx = Math.round(u.x*10)/10;
+      const ny = Math.round(u.y*10)/10;
+      if(!hasCollision(nx, ny, dragging)){
+        pts[dragging] = {x: nx, y: ny};
+        
+        tryRecomputeHr();
+        updateSidebar();
+        redraw();
+      }
+      liveCoord.textContent = `Dragging ${POINT_NAMES[dragging]}: (${pts[dragging].x.toFixed(1)}, ${pts[dragging].y.toFixed(1)})`;
+      tip.textContent = `${POINT_NAMES[dragging]} → (${pts[dragging].x.toFixed(1)}, ${pts[dragging].y.toFixed(1)})`;
+      tip.style.color = POINT_COLORS[dragging];
+      tip.style.borderColor = POINT_COLORS[dragging] + '66';
+      tip.style.left = (e.clientX+14)+'px';
+      tip.style.top  = (e.clientY-12)+'px';
+      tip.classList.add('visible');
+    }
+    return;
+  }
+
+  const idx = hitPoint(px, py);
+  const prevHov = hoveredIdx;
+  hoveredIdx = idx;
+  if(prevHov !== hoveredIdx) redraw();
+
+  if(idx >= 0){
+    const p = pts[idx];
+    const color = POINT_COLORS[idx];
+    liveCoord.textContent = `${POINT_NAMES[idx]}: (${p.x.toFixed(1)}, ${p.y.toFixed(1)}) — drag to move`;
+    tip.textContent = `${POINT_NAMES[idx]} — drag to move`;
+    tip.style.color = color;
+    tip.style.borderColor = color+'66';
+    tip.style.left = (e.clientX+14)+'px';
+    tip.style.top  = (e.clientY-12)+'px';
+    tip.classList.add('visible');
+    cv.style.cursor = 'grab';
+  } else {
+    hoveredIdx = -1;
+    tip.classList.remove('visible');
+    cv.style.cursor = selState < 4 ? 'pointer' : 'crosshair';
+    const u = p2u(px, py);
+    liveCoord.textContent = `x = ${u.x.toFixed(1)}, y = ${u.y.toFixed(1)}`;
+  }
+});
+
+cv.addEventListener('mouseleave', () => {
+  if(dragging !== null) return;
+  hoveredIdx = -1;
+  tip.classList.remove('visible');
+  liveCoord.textContent = 'Hover over a C-point to see its coordinates';
+  redraw();
+});
+
+function computeHr(){
+  const b1 = perpBisector(pts[pair1[0]], pts[pair1[1]]);
+  const b2 = perpBisector(pts[pair2[0]], pts[pair2[1]]);
+  if(!b1 || !b2){ showToast('Could not compute bisectors'); return; }
+  Hr = lineIntersect(b1, b2);
+  if(!Hr){ showToast('Bisectors are parallel — no intersection. Try different pairs.'); selState=2; pair2=[null,null]; return; }
+  sessionStorage.setItem('fivepoint_Hr',   JSON.stringify(Hr));
+  sessionStorage.setItem('fivepoint_pair1', JSON.stringify(pair1));
+  sessionStorage.setItem('fivepoint_pair2', JSON.stringify(pair2));
+}
+
+document.getElementById('btn-undo').addEventListener('click', () => {
+  if (selState > 0) {
+    if (selState === 1) {
+      pair1[0] = null;
+    } else if (selState === 2) {
+      pair1[1] = null;
+    } else if (selState === 3) {
+      pair2[0] = null;
+    } else if (selState === 4) {
+      pair2[1] = null;
+      Hr = null;
+    }
+    selState--;
+    updateSidebar(); redraw();
+  }
+});
+
+document.getElementById('btn-reset-pairs').addEventListener('click', () => {
+  pair1=[null,null]; pair2=[null,null]; Hr=null; selState=0;
+  updateSidebar(); redraw();
+});
+
+document.getElementById('btn-back').addEventListener('click', () => {
+  window.location.href = 'step1_points.html';
+});
+
+document.getElementById('btn-next').addEventListener('click', () => {
+  sessionStorage.setItem('fivepoint_pts', JSON.stringify(pts));
+  sessionStorage.setItem('fivepoint_Hr',   JSON.stringify(Hr));
+  sessionStorage.setItem('fivepoint_pair1', JSON.stringify(pair1));
+  sessionStorage.setItem('fivepoint_pair2', JSON.stringify(pair2));
+  window.location.href = 'step3_tracing.html';
+});
+
+let toastTimer = null;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function updateSidebar(){
+  
+  const sn1 = document.getElementById('sn1');
+  const sn2 = document.getElementById('sn2');
+  const sn3 = document.getElementById('sn3');
+  const msg = document.getElementById('sc-msg');
+
+  sn1.className = 'sc-num ' + (selState >= 2 ? 'done' : selState >= 0 ? 'active' : 'wait');
+  sn2.className = 'sc-num ' + (selState >= 4 ? 'done' : selState >= 2 ? 'active' : 'wait');
+  sn3.className = 'sc-num ' + (Hr ? 'done' : 'wait');
+
+  if(selState === 0) msg.textContent = 'Click any C-point — start Pair 1';
+  else if(selState === 1) msg.textContent = 'Click another C-point — complete Pair 1';
+  else if(selState === 2) msg.textContent = 'Click a C-point — start Pair 2';
+  else if(selState === 3) msg.textContent = 'Click another C-point — complete Pair 2';
+  else msg.textContent = 'Hr found! Proceed to Step 3 ';
+
+  const pp1 = document.getElementById('pp1');
+  const pc1 = document.getElementById('pc1');
+  const pb1c = document.getElementById('pb1-coord');
+  pc1.classList.toggle('active', selState < 2);
+  if(pair1[0] === null){
+    pp1.innerHTML = '<span class="pair-empty">Click two C-points…</span>';
+    pb1c.style.display='none';
+  } else {
+    pp1.innerHTML = buildChip(pair1[0]) +
+      (pair1[1] !== null ? '<div class="pair-connector">—</div>' + buildChip(pair1[1]) : '<div class="pair-empty" style="margin-left:4px">+ one more…</div>');
+    if(pair1[1] !== null){
+      const b = perpBisector(pts[pair1[0]], pts[pair1[1]]);
+      pb1c.style.display='block';
+      pb1c.textContent = b ? `Midpoint: (${b.m.x.toFixed(1)}, ${b.m.y.toFixed(1)})` : '';
+    }
+  }
+
+  const pp2 = document.getElementById('pp2');
+  const pc2 = document.getElementById('pc2');
+  const pb2c = document.getElementById('pb2-coord');
+  pc2.classList.toggle('active', selState >= 2 && selState < 4);
+  if(selState < 2){
+    pp2.innerHTML = '<span class="pair-empty">Complete Pair 1 first…</span>';
+    pb2c.style.display='none';
+  } else if(pair2[0] === null){
+    pp2.innerHTML = '<span class="pair-empty">Click two C-points…</span>';
+    pb2c.style.display='none';
+  } else {
+    pp2.innerHTML = buildChip(pair2[0]) +
+      (pair2[1] !== null ? '<div class="pair-connector">—</div>' + buildChip(pair2[1]) : '<div class="pair-empty" style="margin-left:4px">+ one more…</div>');
+    if(pair2[1] !== null){
+      const b = perpBisector(pts[pair2[0]], pts[pair2[1]]);
+      pb2c.style.display='block';
+      pb2c.textContent = b ? `Midpoint: (${b.m.x.toFixed(1)}, ${b.m.y.toFixed(1)})` : '';
+    }
+  }
+
+  const hrc = document.getElementById('hr-card');
+  const hrCoord = document.getElementById('hr-coord');
+  hrc.classList.toggle('visible', !!Hr);
+  if(Hr){
+    hrCoord.textContent = `(${Hr.x.toFixed(2)}, ${Hr.y.toFixed(2)})`;
+  } else {
+    hrCoord.textContent = '—';
+  }
+
+  document.getElementById('btn-next').disabled = !Hr;
+  document.getElementById('btn-next').classList.toggle('ready', !!Hr);
+}
+
+function buildChip(idx){
+  const color = POINT_COLORS[idx];
+  return `<div class="pair-pt-chip">
+    <div class="dot" style="background:${color}"></div>
+    <span style="color:${color}">${POINT_NAMES[idx]}</span>
+  </div>`;
+}
+
+function redraw(){
+  ctx.clearRect(0,0,W,H);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0,0,W,H);
+
+  drawGrid();
+  drawAxes();
+
+  if(pair1[0]!==null && pair1[1]!==null){
+    const b = perpBisector(pts[pair1[0]], pts[pair1[1]]);
+    if(b) drawBisector(b, PAIR1_COLOR, 'Bisector 1');
+    
+    drawThinLine(pts[pair1[0]], pts[pair1[1]], PAIR1_COLOR+'55');
+    
+    if(b) drawMidMark(b.m, PAIR1_COLOR);
+  }
+
+  if(pair2[0]!==null && pair2[1]!==null){
+    const b = perpBisector(pts[pair2[0]], pts[pair2[1]]);
+    if(b) drawBisector(b, PAIR2_COLOR, 'Bisector 2');
+    drawThinLine(pts[pair2[0]], pts[pair2[1]], PAIR2_COLOR+'55');
+    if(b) drawMidMark(b.m, PAIR2_COLOR);
+  }
+
+  if(Hr) drawHr();
+
+  drawCPoints();
+}
+
+function drawGrid(){
+  const step = pickStep();
+  ctx.strokeStyle = '#e8edf5'; ctx.lineWidth = 0.7;
+  const xStart = Math.ceil(X0/step)*step;
+  const yStart = Math.ceil(Y0/step)*step;
+  for(let x=xStart; x<=X1+step; x+=step){
+    if(Math.abs(x)<1e-6) continue;
+    const {px} = u2p(x,0);
+    ctx.beginPath(); ctx.moveTo(px,mg.t); ctx.lineTo(px,mg.t+gH); ctx.stroke();
+  }
+  for(let y=yStart; y<=Y1+step; y+=step){
+    if(Math.abs(y)<1e-6) continue;
+    const {py} = u2p(0,y);
+    ctx.beginPath(); ctx.moveTo(mg.l,py); ctx.lineTo(mg.l+gW,py); ctx.stroke();
+  }
+}
+function pickStep(){
+  const r = X1-X0; return r>400?50:r>200?20:10;
+}
+
+function drawAxes(){
+  const O = u2p(0,0);
+  ctx.strokeStyle = '#b0bec8'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(mg.l,O.py); ctx.lineTo(mg.l+gW,O.py); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(O.px,mg.t); ctx.lineTo(O.px,mg.t+gH); ctx.stroke();
+  
+  ctx.fillStyle='#b0bec8';
+  const a=8;
+  ctx.beginPath(); ctx.moveTo(mg.l+gW,O.py); ctx.lineTo(mg.l+gW-a,O.py-a/2); ctx.lineTo(mg.l+gW-a,O.py+a/2); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(O.px,mg.t); ctx.lineTo(O.px-a/2,mg.t+a); ctx.lineTo(O.px+a/2,mg.t+a); ctx.closePath(); ctx.fill();
+  
+  ctx.font='bold 12px Inter,sans-serif'; ctx.fillStyle='#64748b';
+  ctx.fillText('X',mg.l+gW-6,O.py-12);
+  ctx.fillText('Y',O.px+10,mg.t+12);
+  ctx.fillText('O',O.px-18,O.py+14);
+  
+  const step = pickStep();
+  const xStart = Math.ceil(X0/step)*step;
+  const yStart = Math.ceil(Y0/step)*step;
+  ctx.font='10px JetBrains Mono,monospace'; ctx.fillStyle='#94a3b8';
+  ctx.textAlign='center';
+  for(let x=xStart; x<=X1+step; x+=step){
+    if(!x)continue;
+    const{px}=u2p(x,0);
+    ctx.fillText(x,px,O.py+16);
+    ctx.strokeStyle='#c8d3de'; ctx.lineWidth=0.8;
+    ctx.beginPath();ctx.moveTo(px,O.py-3);ctx.lineTo(px,O.py+3);ctx.stroke();
+  }
+  ctx.textAlign='right';
+  for(let y=yStart; y<=Y1+step; y+=step){
+    if(!y)continue;
+    const{py}=u2p(0,y);
+    ctx.fillText(y,O.px-6,py+4);
+    ctx.strokeStyle='#c8d3de'; ctx.lineWidth=0.8;
+    ctx.beginPath();ctx.moveTo(O.px-3,py);ctx.lineTo(O.px+3,py);ctx.stroke();
+  }
+  ctx.textAlign='left';
+}
+
+function drawBisector(b, color, label){
+  ctx.save();
+  ctx.beginPath();
+  if (Hr) {
+    const logAng = Math.atan2(b.m.y - Hr.y, b.m.x - Hr.x);
+    const ray_ex = Hr.x + Math.cos(logAng)*1200;
+    const ray_ey = Hr.y + Math.sin(logAng)*1200;
+    const s = u2p(Hr.x, Hr.y);
+    const e = u2p(ray_ex, ray_ey);
+    ctx.moveTo(s.px, s.py); ctx.lineTo(e.px, e.py);
+  } else {
+    const s = u2p(b.s.x, b.s.y);
+    const e = u2p(b.e.x, b.e.y);
+    ctx.moveTo(s.px, s.py); ctx.lineTo(e.px, e.py);
+  }
+  ctx.strokeStyle = color;
+  ctx.lineWidth   = 2.2;
+  ctx.setLineDash([10,6]);
+  ctx.globalAlpha = 0.65;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawThinLine(p1, p2, color){
+  const a = u2p(p1.x,p1.y), b = u2p(p2.x,p2.y);
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(a.px,a.py); ctx.lineTo(b.px,b.py);
+  ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawMidMark(m, color){
+  const {px,py} = u2p(m.x,m.y);
+  ctx.save();
+  ctx.beginPath(); ctx.arc(px,py,5,0,2*Math.PI);
+  ctx.fillStyle = color+'cc'; ctx.fill();
+  ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.restore();
+}
+
+function drawHr(){
+  const {px,py} = u2p(Hr.x, Hr.y);
+
+  ctx.save();
+  ctx.beginPath(); ctx.arc(px,py,26,0,2*Math.PI);
+  ctx.fillStyle = HR_COLOR+'1a'; ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  ctx.strokeStyle = HR_COLOR+'55'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(px-36,py); ctx.lineTo(px+36,py); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(px,py-36); ctx.lineTo(px,py+36); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  ctx.save();
+  ctx.beginPath(); ctx.arc(px,py,14,0,2*Math.PI);
+  ctx.fillStyle='#0f172a'; ctx.fill();
+  ctx.strokeStyle=HR_COLOR; ctx.lineWidth=2.5; ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.strokeStyle=HR_COLOR; ctx.lineWidth=1.5;
+  for(let i=-10; i<=10; i+=5){
+    ctx.beginPath(); ctx.moveTo(px+i,py+14); ctx.lineTo(px+i-3,py+21); ctx.stroke();
+  }
+  ctx.beginPath(); ctx.moveTo(px-12,py+14); ctx.lineTo(px+12,py+14); ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.beginPath(); ctx.arc(px,py,5,0,2*Math.PI);
+  ctx.fillStyle=HR_COLOR; ctx.fill();
+  ctx.restore();
+
+  const lbl = `Hr (${Hr.x.toFixed(1)}, ${Hr.y.toFixed(1)})`;
+  ctx.font = 'bold 12px Inter,sans-serif';
+  const tw = ctx.measureText(lbl).width;
+  const pw = tw+16, ph=20;
+  ctx.save();
+  ctx.fillStyle=HR_COLOR+'22';
+  ctx.strokeStyle=HR_COLOR+'88'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.roundRect(px-pw/2, py-42, pw, ph, 5); ctx.fill(); ctx.stroke();
+  ctx.fillStyle=HR_COLOR; ctx.textAlign='center';
+  ctx.fillText(lbl, px, py-27);
+  ctx.restore();
+}
+
+function drawCPoints(){
+  const usedInPair1 = pair1.filter(v=>v!==null);
+  const usedInPair2 = pair2.filter(v=>v!==null);
+
+  for(let i=0; i<pts.length; i++){
+    const p = pts[i];
+    const {px,py} = u2p(p.x, p.y);
+    const color   = POINT_COLORS[i];
+    const name    = POINT_NAMES[i];
+    const inP1    = usedInPair1.includes(i);
+    const inP2    = usedInPair2.includes(i);
+    const isDrag  = dragging === i;
+    const isHov   = hoveredIdx === i && !isDrag;
+    const locked  = inP1 || inP2;
+
+    if(isDrag){
+      ctx.save();
+      ctx.beginPath(); ctx.arc(px,py,28,0,2*Math.PI);
+      ctx.fillStyle = color+'1e'; ctx.fill();
+      ctx.strokeStyle = color+'55'; ctx.lineWidth=2;
+      ctx.setLineDash([6,4]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.restore();
+    }
+
+    if(isHov){
+      ctx.save();
+      ctx.beginPath(); ctx.arc(px,py,22,0,2*Math.PI);
+      ctx.fillStyle = color+'20'; ctx.fill();
+      ctx.restore();
+    }
+
+    if(inP1){
+      ctx.save();
+      ctx.beginPath(); ctx.arc(px,py,18,0,2*Math.PI);
+      ctx.strokeStyle=PAIR1_COLOR; ctx.lineWidth=2.5; ctx.setLineDash([4,3]); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+    if(inP2){
+      ctx.save();
+      ctx.beginPath(); ctx.arc(px,py,18,0,2*Math.PI);
+      ctx.strokeStyle=PAIR2_COLOR; ctx.lineWidth=2.5; ctx.setLineDash([4,3]); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+
+    const r = isDrag ? 13 : 11;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(px,py,r,0,2*Math.PI);
+    ctx.fillStyle = color + (locked || isDrag ? 'ff' : 'cc'); ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = isDrag ? 3.5 : 2.5; ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.beginPath(); ctx.arc(px,py,4,0,2*Math.PI);
+    ctx.fillStyle='#fff'; ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.font=`bold ${isDrag?14:13}px Inter,sans-serif`;
+    ctx.fillStyle=color; ctx.textAlign='center';
+    ctx.fillText(name, px, py-(isDrag?23:19));
+    ctx.restore();
+
+    const coord = `(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`;
+    ctx.font='10px JetBrains Mono,monospace';
+    const tw = ctx.measureText(coord).width;
+    const pw=tw+14, ph=15;
+    const pillY = py + (isDrag ? 20 : 16);
+    ctx.save();
+    ctx.fillStyle = isDrag ? color+'44' : color+'22';
+    ctx.strokeStyle = isDrag ? color+'aa' : color+'55';
+    ctx.lineWidth=1;
+    ctx.beginPath(); ctx.roundRect(px-pw/2, pillY, pw, ph, 4); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=color; ctx.textAlign='center';
+    ctx.fillText(coord, px, pillY+11);
+    ctx.restore();
+
+    if(inP1){
+      ctx.save();
+      ctx.font='bold 9px Inter,sans-serif';
+      ctx.fillStyle=PAIR1_COLOR; ctx.textAlign='center';
+      ctx.fillText('P1', px, pillY+ph+10);
+      ctx.restore();
+    }
+    if(inP2){
+      ctx.save();
+      ctx.font='bold 9px Inter,sans-serif';
+      ctx.fillStyle=PAIR2_COLOR; ctx.textAlign='center';
+      ctx.fillText('P2', px, pillY+ph+10);
+      ctx.restore();
+    }
+  }
+}
+
+updateSidebar();
+resize();
+</script>
+
+<style>
+#guide-fab{position:fixed;top:16px;right:16px;z-index:9999;width:44px;height:44px;border-radius:50%;border:2px solid rgba(99,179,237,.5);background:linear-gradient(135deg,#1e3a5f,#0f2744);box-shadow:0 4px 20px rgba(0,0,0,.45);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .3s;animation:fab-pulse 3s ease-in-out infinite;}
+#guide-fab:hover{transform:scale(1.12);box-shadow:0 6px 28px rgba(0,0,0,.5),0 0 0 6px rgba(99,179,237,.18);}
+@keyframes fab-pulse{0%,100%{box-shadow:0 4px 20px rgba(0,0,0,.45),0 0 0 0 rgba(99,179,237,.3)}50%{box-shadow:0 4px 20px rgba(0,0,0,.45),0 0 0 7px rgba(99,179,237,.08)}}
+#guide-overlay{position:fixed;inset:0;z-index:10000;background:rgba(4,10,22,.8);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:20px;}
+#guide-overlay.open{display:flex;}
+#guide-modal{width:min(700px,100%);max-height:92vh;overflow-y:auto;background:linear-gradient(160deg,#0b1c35,#071426);border:1.5px solid #1e3a5e;border-radius:22px;padding:32px 30px 28px;box-shadow:0 30px 80px rgba(0,0,0,.7);position:relative;animation:modal-in .35s cubic-bezier(.34,1.3,.64,1);}
+@keyframes modal-in{from{transform:translateY(22px) scale(.96);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+#guide-modal::-webkit-scrollbar{width:5px}#guide-modal::-webkit-scrollbar-thumb{background:#1e3a5e;border-radius:3px}
+#guide-close{position:absolute;top:16px;right:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:50%;width:32px;height:32px;color:#94a3b8;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,color .2s;font-family:sans-serif;}
+#guide-close:hover{background:rgba(239,68,68,.25);color:#fca5a5;}
+.gd-header{text-align:center;margin-bottom:28px;}
+.gd-pill{display:inline-flex;align-items:center;gap:7px;background:rgba(99,179,237,.1);border:1px solid rgba(99,179,237,.25);border-radius:30px;padding:5px 16px;font-size:.7rem;font-weight:700;letter-spacing:.08em;color:#63b3ed;margin-bottom:12px;}
+.gd-title{font-size:1.35rem;font-weight:800;background:linear-gradient(135deg,#63b3ed,#a78bfa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;}
+.gd-sub{font-size:.77rem;color:#64748b;}
+.gd-steps{display:flex;flex-direction:column;gap:12px;}
+.gd-card{display:flex;gap:14px;align-items:flex-start;background:rgba(255,255,255,.03);border:1.5px solid rgba(255,255,255,.06);border-radius:16px;padding:16px 18px;position:relative;overflow:hidden;}
+.gd-card.gd-current{border-color:rgba(99,179,237,.5);background:rgba(99,179,237,.07);}
+.gd-card.gd-done{border-color:rgba(52,211,153,.22)!important;background:rgba(52,211,153,.04)!important;}
+.gd-current-badge{position:absolute;top:12px;right:14px;background:rgba(99,179,237,.25);color:#63b3ed;font-size:.6rem;font-weight:700;letter-spacing:.06em;padding:2px 9px;border-radius:20px;border:1px solid rgba(99,179,237,.4);font-family:'Inter',sans-serif;}
+.gd-icon{width:46px;height:46px;min-width:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.08);}
+.gd-info{flex:1;min-width:0;}
+.gd-step-num{font-size:.62rem;font-weight:700;letter-spacing:.07em;color:#64748b;margin-bottom:3px;font-family:'Inter',sans-serif;}
+.gd-step-title{font-size:.95rem;font-weight:700;color:#e2eaf6;margin-bottom:6px;font-family:'Inter',sans-serif;}
+.gd-bullets{list-style:none;display:flex;flex-direction:column;gap:5px;}
+.gd-bullets li{font-size:.73rem;color:#94a3b8;padding-left:16px;position:relative;line-height:1.5;font-family:'Inter',sans-serif;}
+.gd-bullets li::before{content:'→';position:absolute;left:0;font-size:.65rem;}
+.gd-tip{font-size:.68rem;color:#4a6080;background:rgba(99,179,237,.06);border:1px solid rgba(99,179,237,.12);border-radius:8px;padding:6px 10px;margin-top:8px;font-family:'Inter',sans-serif;}
+.gd-footer{margin-top:22px;text-align:center;font-size:.68rem;color:#3a5070;font-family:'Inter',sans-serif;}
+</style>
+<button id="guide-fab" onclick="document.getElementById('guide-overlay').classList.add('open')" title="Step 2 — How to use this page">
+  <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9.5" stroke="#63b3ed" stroke-width="1.5"/><text x="11" y="16" text-anchor="middle" font-family="Inter,sans-serif" font-weight="800" font-size="13" fill="#63b3ed">?</text></svg>
+</button>
+<div id="guide-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+<div id="guide-modal">
+  <button id="guide-close" onclick="document.getElementById('guide-overlay').classList.remove('open')">&#x2715;</button>
+  <div class="gd-header">
+    <div class="gd-pill"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="currentColor"/></svg>HOW IT WORKS</div>
+    <div class="gd-title">4-Bar Linkage &#8212; Step by Step</div>
+    <div class="gd-sub">Read each step below and follow along. Even a kid can do it! &#x1F680;</div>
+  </div>
+  <div class="gd-steps">
+    <div class="gd-card" id="gd-s1">
+      <div class="gd-icon" style="background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.25)">&#x1F3AF;</div>
+      <div class="gd-info">
+        <div class="gd-step-num">STEP 1</div>
+        <div class="gd-step-title">Drop 5 Target Dots on the Canvas</div>
+        <ul class="gd-bullets">
+          <li>Think of 5 places a robot arm should touch &#8212; those are your targets</li>
+          <li>Click anywhere on the <strong>white drawing area</strong> to drop a colored dot</li>
+          <li>Drop them one by one &#8212; they will be named <strong>C1, C2, C3, C4, C5</strong> automatically</li>
+          <li>Made a mistake? Click and drag any dot to move it to a new position</li>
+          <li>Keep dots spread apart &#8212; they must not sit on top of each other!</li>
+          <li>Once all 5 dots are placed, press <strong style="color:#63b3ed">Proceed to Step 2 &#8594;</strong> in the sidebar</li>
+        </ul>
+        <div class="gd-tip">&#x1F5B1;&#xFE0F; <strong>Move the view:</strong> Right-click + drag OR hold Shift + drag to pan left/right/up/down &nbsp;|&nbsp; Scroll wheel to zoom in or out</div>
+      </div>
+    </div>
+    <div class="gd-card" id="gd-s2">
+      <div class="gd-icon" style="background:rgba(6,182,212,.1);border-color:rgba(6,182,212,.25)">&#x1F535;</div>
+      <div class="gd-info">
+        <div class="gd-step-num">STEP 2</div>
+        <div class="gd-step-title">Pick 2 Pairs of Dots to Find the Rocking Hinge (Hr)</div>
+        <ul class="gd-bullets">
+          <li>Click any 2 of your 5 dots &#8212; a <strong style="color:#06b6d4">blue line</strong> will appear exactly in the middle between them</li>
+          <li>Now click 2 more different dots &#8212; an <strong style="color:#f97316">orange line</strong> appears in the middle of those two</li>
+          <li>Where the blue and orange lines cross is the special point <strong style="color:#10b981">Hr</strong></li>
+          <li><strong>Hr</strong> is the fixed hinge on the ground where the rocking arm is attached</li>
+          <li>Once both pairs are picked and Hr appears, press <strong style="color:#63b3ed">Proceed to Step 3 &#8594;</strong></li>
+          <li>Picked the wrong dot? Press <strong>Undo Last Selection</strong> to go back one step</li>
+        </ul>
+        <div class="gd-tip">&#x1F5B1;&#xFE0F; <strong>Move the view:</strong> Right-click + drag OR hold Shift + drag to pan &nbsp;|&nbsp; Scroll wheel to zoom</div>
+      </div>
+    </div>
+    <div class="gd-card" id="gd-s3">
+      <div class="gd-icon" style="background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.25)">&#x1F300;</div>
+      <div class="gd-info">
+        <div class="gd-step-num">STEP 3</div>
+        <div class="gd-step-title">Spin the 3 Glowing Lines Until They Line Up</div>
+        <ul class="gd-bullets">
+          <li>You will now see 3 glowing lines joined like a fan, spinning around <strong>Hr</strong></li>
+          <li><strong>Left-click + drag</strong> the drawing area left or right to spin the fan</li>
+          <li>Use the <strong>angle slider</strong> in the sidebar for tiny fine-tune movements</li>
+          <li>Your goal: spin until the <strong style="color:#fbbf24">yellow line in the middle (T&#x2082;)</strong> exactly covers the <strong style="color:#f97316">orange dashed line (B&#x2082;)</strong></li>
+          <li>When they match, the badge turns purple &#8212; or press <strong>Snap to Align</strong> to jump there in one click</li>
+          <li>Once lined up, press <strong style="color:#63b3ed">Proceed to Step 4 &#8594;</strong></li>
+        </ul>
+        <div class="gd-tip">&#x1F5B1;&#xFE0F; <strong>Move the view:</strong> Right-click + drag OR hold Shift + drag to pan &nbsp;|&nbsp; Scroll wheel to zoom</div>
+      </div>
+    </div>
+    <div class="gd-card" id="gd-s4">
+      <div class="gd-icon" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.25)">&#x2699;&#xFE0F;</div>
+      <div class="gd-info">
+        <div class="gd-step-num">STEP 4</div>
+        <div class="gd-step-title">Grow Circles to Find the Spinning Hinge (Hc) and End Point B</div>
+        <ul class="gd-bullets">
+          <li>Drag the <strong style="color:#ef4444">R slider</strong> on the left to make circles grow or shrink around your dots</li>
+          <li>When the circle from the <strong>first dot from Pair 1</strong> touches a glowing tracing line, a small crossing dot appears &#8212; that is <strong style="color:#ef4444">the first cut point</strong></li>
+          <li>The same circle size from the <strong>first dot from Pair 2</strong> gives you <strong style="color:#ef4444">the second cut point</strong></li>
+          <li>A line drawn through the middle of those two cut points will hit the tracing line at <strong style="color:#10b981">Hc</strong> &#8212; the spinning hinge!</li>
+          <li>Press <strong>Draw Hc Circle</strong> &#8212; you will see a large circle that the spinning arm follows</li>
+          <li>Press <strong>Congruent &#x25B3;</strong> &#8212; this draws helper triangles to find point <strong style="color:#3b82f6">B</strong> (the tip of the rocking arm)</li>
+          <li>Use <strong>Near Cut / Far Cut</strong> buttons to choose which crossing dot to use when two appear on the line</li>
+          <li>When <strong style="color:#10b981">Hc</strong> and <strong style="color:#3b82f6">B</strong> are both shown on screen, press <strong style="color:#63b3ed">Finish Synthesis &#8594;</strong></li>
+        </ul>
+        <div class="gd-tip">&#x1F5B1;&#xFE0F; <strong>Move the view:</strong> Right-click + drag OR hold Shift + drag to pan &nbsp;|&nbsp; Scroll wheel to zoom</div>
+      </div>
+    </div>
+    <div class="gd-card" id="gd-s5">
+      <div class="gd-icon" style="background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.25)">&#x1F3AC;</div>
+      <div class="gd-info">
+        <div class="gd-step-num">STEP 5</div>
+        <div class="gd-step-title">Watch Your Robot Arm Draw the Path!</div>
+        <ul class="gd-bullets">
+          <li>Press <strong style="color:#10b981">Form Linkage</strong> &#8212; the 4 arms of your machine will snap together!</li>
+          <li>The <strong style="color:#34d399">green arm</strong> spins around <strong>Hc</strong> (this is called the crank)</li>
+          <li>The <strong style="color:#60a5fa">blue arm</strong> rocks left and right around <strong>Hr</strong> (this is the rocker)</li>
+          <li>The <strong style="color:#fb923c">orange arm</strong> connects the crank and rocker (this is the coupler)</li>
+          <li>The <strong style="color:#f97316">orange dot</strong> on the orange arm is the pen tip &#8212; it should pass through all 5 of your target dots! &#x1F389;</li>
+          <li>Press <strong style="color:#fbbf24">Animate</strong> to start the motion. Drag the <strong>speed slider</strong> to go faster or slower</li>
+          <li>Toggle <strong>Primary / Crossed</strong> to try two different ways to connect the arms</li>
+        </ul>
+        <div class="gd-tip">&#x1F5B1;&#xFE0F; <strong>Move the view:</strong> Right-click + drag OR hold Shift + drag to pan &nbsp;|&nbsp; Scroll wheel to zoom</div>
+      </div>
+    </div>
+  </div>
+  <div class="gd-footer">&#x1F4A1; Press <strong>Escape</strong> or click anywhere outside this box to close</div>
+</div>
+</div>
+<script>
+(function(){
+  var cs=2;
+  var card=document.getElementById('gd-s'+cs);
+  if(card){card.classList.add('gd-current');var b=document.createElement('div');b.className='gd-current-badge';b.textContent='YOU ARE HERE';card.appendChild(b);}
+  for(var s=1;s<cs;s++){var p=document.getElementById('gd-s'+s);if(p)p.classList.add('gd-done');}
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')document.getElementById('guide-overlay').classList.remove('open');});
+})();
+</script>
+
+<style>
+#vikas-badge{
+  position:fixed;bottom:14px;right:16px;z-index:8888;
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 11px 5px 8px;
+  background:rgba(8,14,30,.72);
+  border:1px solid transparent;
+  border-radius:30px;
+  backdrop-filter:blur(10px);
+  font-family:'Inter','Segoe UI',sans-serif;
+  cursor:pointer;
+  box-shadow:0 0 0 1px rgba(139,92,246,.35),0 4px 18px rgba(0,0,0,.45);
+  transition:box-shadow .3s,transform .25s;
+  user-select:none;
+}
+#vikas-badge:hover{
+  box-shadow:0 0 0 1.5px rgba(139,92,246,.6),0 0 0 4px rgba(99,102,241,.12),0 6px 22px rgba(0,0,0,.5);
+  transform:translateY(-1px);
+}
+.vb-spark{font-size:10px;line-height:1;filter:drop-shadow(0 0 4px #a78bfa);}
+.vb-text{
+  font-size:10.5px;font-weight:300;letter-spacing:.04em;
+  background:linear-gradient(90deg,#93c5fd,#c4b5fd);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  white-space:nowrap;
+}
+.vb-copy{font-size:9px;font-weight:300;color:#c4b5fd;-webkit-text-fill-color:#c4b5fd;opacity:.75;margin-left:2px;}
+
+#credits-popup{
+  position:fixed;bottom:52px;right:16px;z-index:8889;
+  width:240px;
+  background:rgba(8,14,30,.88);
+  border:1px solid rgba(139,92,246,.3);
+  border-radius:14px;
+  padding:16px 18px;
+  box-shadow:0 8px 32px rgba(0,0,0,.55),0 0 0 1px rgba(139,92,246,.15);
+  backdrop-filter:blur(18px);
+  font-family:'Inter','Segoe UI',sans-serif;
+  opacity:0;pointer-events:none;
+  transform:translateY(8px) scale(.97);
+  transition:opacity .22s ease,transform .22s cubic-bezier(.34,1.3,.64,1);
+}
+#credits-popup.open{opacity:1;pointer-events:all;transform:translateY(0) scale(1);}
+.cp-title{
+  font-size:9px;font-weight:700;letter-spacing:.1em;
+  color:rgba(148,163,184,.45);margin-bottom:12px;
+  text-transform:uppercase;
+}
+.cp-row{display:flex;flex-direction:column;gap:8px;}
+.cp-item{
+  display:flex;flex-direction:column;gap:2px;
+  padding-bottom:8px;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+.cp-item:last-child{border-bottom:none;padding-bottom:0;}
+.cp-name{
+  font-size:11px;font-weight:600;
+  background:linear-gradient(90deg,#93c5fd,#c4b5fd);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.cp-desc{font-size:10px;font-weight:300;color:rgba(148,163,184,.7);line-height:1.5;}
+.cp-footer{
+  margin-top:12px;font-size:9px;font-weight:300;
+  color:rgba(148,163,184,.35);text-align:center;letter-spacing:.03em;
+}
+</style>
+
+<div id="credits-popup">
+  <div class="cp-title">Credits</div>
+  <div class="cp-row">
+    <div class="cp-item">
+      <span class="cp-name">Vikas</span>
+      <span class="cp-desc">Developer</span>
+    </div>
+    <div class="cp-item">
+      <span class="cp-name">AI&#8209;assisted</span>
+      <span class="cp-desc">Animation, link logic, Grashof condition, tracing lines</span>
+    </div>
+    <div class="cp-item">
+      <span class="cp-name">Tools</span>
+      <span class="cp-desc">Antigravity &nbsp;&middot;&nbsp; ChatGPT</span>
+    </div>
+  </div>
+  <div class="cp-footer">Built with AI support &nbsp;&#10022;</div>
+</div>
+
+<div id="vikas-badge" onclick="toggleCredits(event)">
+  <span class="vb-spark">&#10022;</span>
+  <span class="vb-text">Vikas &times; AI</span>
+  <span class="vb-copy">&copy;</span>
+</div>
+
+<script>
+(function(){
+  function toggleCredits(e){
+    e.stopPropagation();
+    document.getElementById('credits-popup').classList.toggle('open');
+  }
+  window.toggleCredits = toggleCredits;
+  document.addEventListener('click', function(e){
+    var p = document.getElementById('credits-popup');
+    var b = document.getElementById('vikas-badge');
+    if(p && !p.contains(e.target) && !b.contains(e.target)){
+      p.classList.remove('open');
+    }
+  });
+})();
+</script>
+</body>
+</html>
+
+<style>
+#vikas-badge{
+  position:fixed;bottom:14px;right:16px;z-index:8888;
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 11px 5px 8px;
+  background:rgba(8,14,30,.72);
+  border:1px solid transparent;
+  border-radius:30px;
+  backdrop-filter:blur(10px);
+  font-family:'Inter','Segoe UI',sans-serif;
+  cursor:pointer;
+  box-shadow:0 0 0 1px rgba(139,92,246,.35),0 4px 18px rgba(0,0,0,.45);
+  transition:box-shadow .3s,transform .25s;
+  user-select:none;
+}
+#vikas-badge:hover{
+  box-shadow:0 0 0 1.5px rgba(139,92,246,.6),0 0 0 4px rgba(99,102,241,.12),0 6px 22px rgba(0,0,0,.5);
+  transform:translateY(-1px);
+}
+.vb-spark{font-size:10px;line-height:1;filter:drop-shadow(0 0 4px #a78bfa);}
+.vb-text{
+  font-size:10.5px;font-weight:300;letter-spacing:.04em;
+  background:linear-gradient(90deg,#93c5fd,#c4b5fd);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  white-space:nowrap;
+}
+.vb-copy{font-size:9px;font-weight:300;color:#c4b5fd;-webkit-text-fill-color:#c4b5fd;opacity:.75;margin-left:2px;}
+
+#credits-popup{
+  position:fixed;bottom:52px;right:16px;z-index:8889;
+  width:240px;
+  background:rgba(8,14,30,.88);
+  border:1px solid rgba(139,92,246,.3);
+  border-radius:14px;
+  padding:16px 18px;
+  box-shadow:0 8px 32px rgba(0,0,0,.55),0 0 0 1px rgba(139,92,246,.15);
+  backdrop-filter:blur(18px);
+  font-family:'Inter','Segoe UI',sans-serif;
+  opacity:0;pointer-events:none;
+  transform:translateY(8px) scale(.97);
+  transition:opacity .22s ease,transform .22s cubic-bezier(.34,1.3,.64,1);
+}
+#credits-popup.open{opacity:1;pointer-events:all;transform:translateY(0) scale(1);}
+.cp-title{
+  font-size:9px;font-weight:700;letter-spacing:.1em;
+  color:rgba(148,163,184,.45);margin-bottom:12px;
+  text-transform:uppercase;
+}
+.cp-row{display:flex;flex-direction:column;gap:8px;}
+.cp-item{
+  display:flex;flex-direction:column;gap:2px;
+  padding-bottom:8px;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+.cp-item:last-child{border-bottom:none;padding-bottom:0;}
+.cp-name{
+  font-size:11px;font-weight:600;
+  background:linear-gradient(90deg,#93c5fd,#c4b5fd);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.cp-desc{font-size:10px;font-weight:300;color:rgba(148,163,184,.7);line-height:1.5;}
+.cp-footer{
+  margin-top:12px;font-size:9px;font-weight:300;
+  color:rgba(148,163,184,.35);text-align:center;letter-spacing:.03em;
+}
+</style>
+
+<div id="credits-popup">
+  <div class="cp-title">Credits</div>
+  <div class="cp-row">
+    <div class="cp-item">
+      <span class="cp-name">Vikas</span>
+      <span class="cp-desc">Developer</span>
+    </div>
+    <div class="cp-item">
+      <span class="cp-name">AI&#8209;assisted</span>
+      <span class="cp-desc">Animation, link logic, Grashof condition, tracing lines</span>
+    </div>
+    <div class="cp-item">
+      <span class="cp-name">Tools</span>
+      <span class="cp-desc">Antigravity &nbsp;&middot;&nbsp; ChatGPT</span>
+    </div>
+  </div>
+  <div class="cp-footer">Built with AI support &nbsp;&#10022;</div>
+</div>
+
+<div id="vikas-badge" onclick="toggleCredits(event)">
+  <span class="vb-spark">&#10022;</span>
+  <span class="vb-text">Vikas &times; AI</span>
+  <span class="vb-copy">&copy;</span>
+</div>
+
+<script>
+(function(){
+  function toggleCredits(e){
+    e.stopPropagation();
+    document.getElementById('credits-popup').classList.toggle('open');
+  }
+  window.toggleCredits = toggleCredits;
+  document.addEventListener('click', function(e){
+    var p = document.getElementById('credits-popup');
+    var b = document.getElementById('vikas-badge');
+    if(p && !p.contains(e.target) && !b.contains(e.target)){
+      p.classList.remove('open');
+    }
+  });
+})();
+</script>
+</body>
+</html>

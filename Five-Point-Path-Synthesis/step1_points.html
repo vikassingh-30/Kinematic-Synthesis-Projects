@@ -1,0 +1,1281 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>5-Point Synthesis | Step 1 — Place Precision Points</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+
+  :root {
+    --bg-deep:     #060d1a;
+    --bg-panel:    #0b1628;
+    --bg-card:     #0f1f35;
+    --bg-hover:    #162540;
+    --border:      #1e3352;
+    --border-hi:   #2d4f7a;
+    --text-bright: #e2eaf6;
+    --text-muted:  #64748b;
+    --text-dim:    #3a5070;
+    --accent:      #3b82f6;
+    --accent-glow: rgba(59,130,246,0.25);
+    --green:       #10b981;
+    --amber:       #f59e0b;
+    --purple:      #a855f7;
+    --red:         #ef4444;
+    --c1: #3b82f6;
+    --c2: #10b981;
+    --c3: #f59e0b;
+    --c4: #a855f7;
+    --c5: #ef4444;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-deep);
+    height: 100vh; width: 100vw;
+    overflow: hidden;
+    display: flex;
+    color: var(--text-bright);
+  }
+
+  .sidebar {
+    width: 300px;
+    min-width: 300px;
+    height: 100vh;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sidebar-header {
+    padding: 20px 18px 14px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #0d1e38 0%, var(--bg-panel) 100%);
+  }
+
+  .sidebar-header .step-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(59,130,246,0.12);
+    border: 1px solid rgba(59,130,246,0.3);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: .68rem;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: .06em;
+    margin-bottom: 10px;
+  }
+  .sidebar-header h1 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-bright);
+    line-height: 1.3;
+  }
+  .sidebar-header h1 span { color: var(--accent); }
+  .sidebar-header p {
+    font-size: .7rem;
+    color: var(--text-muted);
+    margin-top: 5px;
+    line-height: 1.5;
+  }
+
+  .sidebar-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .sidebar-body::-webkit-scrollbar { width: 4px; }
+  .sidebar-body::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
+
+  .sec-label {
+    font-size: .64rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .point-list {
+    background: var(--bg-card);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .point-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+    position: relative;
+  }
+  .point-row:last-child { border-bottom: none; }
+  .point-row.placed { cursor: default; }
+  .point-row.active { background: var(--bg-hover); }
+  .point-row.placed:hover { background: rgba(255,255,255,0.02); }
+
+  .pt-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 2px solid transparent;
+    transition: box-shadow .2s;
+  }
+  .point-row.placed .pt-dot { box-shadow: 0 0 8px currentColor; }
+
+  .pt-info { flex: 1; }
+  .pt-name {
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--text-bright);
+  }
+  .pt-coord {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .67rem;
+    color: var(--text-muted);
+    margin-top: 1px;
+    transition: color .2s;
+  }
+  .point-row.placed .pt-coord { color: var(--text-bright); }
+
+  .pt-status {
+    font-size: .6rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 10px;
+    letter-spacing: .05em;
+  }
+  .status-waiting { background: rgba(100,116,139,.15); color: var(--text-muted); }
+  .status-active  { background: rgba(59,130,246,.15);  color: var(--accent); animation: pulse 1.5s ease-in-out infinite; }
+  .status-done    { background: rgba(16,185,129,.15);  color: var(--green); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .5; }
+  }
+
+  .progress-wrap {
+    background: var(--bg-card);
+    border-radius: 10px;
+    padding: 12px;
+    border: 1px solid var(--border);
+  }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: .68rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .progress-label strong { color: var(--text-bright); }
+  .progress-track {
+    height: 6px;
+    background: var(--bg-deep);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--purple));
+    border-radius: 3px;
+    transition: width .4s cubic-bezier(.34,1.56,.64,1);
+  }
+  .progress-dots {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    justify-content: center;
+  }
+  .pd {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--bg-deep);
+    border: 1.5px solid var(--border-hi);
+    transition: all .3s;
+  }
+  .pd.done { border-color: transparent; }
+  .pd.active { border-color: var(--accent); box-shadow: 0 0 6px var(--accent); }
+
+  .instr-card {
+    background: var(--bg-card);
+    border-radius: 10px;
+    padding: 11px 13px;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--amber);
+  }
+  .instr-card .ic-title {
+    font-size: .7rem;
+    font-weight: 600;
+    color: var(--amber);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .instr-card ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .instr-card ul li {
+    font-size: .67rem;
+    color: var(--text-muted);
+    padding-left: 12px;
+    position: relative;
+  }
+  .instr-card ul li::before { content: '→'; position: absolute; left: 0; color: var(--amber); }
+
+  .btn-group { display: flex; flex-direction: column; gap: 7px; }
+  .btn {
+    width: 100%;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: .75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    letter-spacing: .02em;
+  }
+  .btn:hover { transform: translateY(-1px); filter: brightness(1.12); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; transform: none !important; filter: none !important; }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(37,99,235,.4);
+  }
+  .btn-primary.ready {
+    background: linear-gradient(135deg, #059669, #10b981);
+    box-shadow: 0 4px 15px rgba(16,185,129,.4);
+    animation: glow-green 2s ease-in-out infinite;
+  }
+  @keyframes glow-green {
+    0%, 100% { box-shadow: 0 4px 15px rgba(16,185,129,.4); }
+    50% { box-shadow: 0 4px 25px rgba(16,185,129,.7); }
+  }
+  .btn-danger {
+    background: rgba(127,29,29,.4);
+    color: #fca5a5;
+    border: 1px solid rgba(239,68,68,.2);
+  }
+  .btn-danger:hover { background: rgba(127,29,29,.7); }
+  .btn-secondary {
+    background: var(--bg-card);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { color: var(--text-bright); border-color: var(--border-hi); }
+
+  .sidebar-footer {
+    padding: 12px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-deep);
+  }
+  .coord-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .65rem;
+    color: var(--text-dim);
+    text-align: center;
+  }
+
+  .canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  canvas {
+    display: block;
+    cursor: crosshair;
+    touch-action: none;
+  }
+
+  #cursor-tip {
+    position: fixed;
+    padding: 5px 10px;
+    background: rgba(11,22,40,.92);
+    border: 1px solid var(--border-hi);
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .65rem;
+    color: var(--text-bright);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .15s;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  #cursor-tip.visible { opacity: 1; }
+
+  #complete-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(6,13,26,.7);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 500;
+  }
+  #complete-overlay.show { display: flex; }
+  .cov-box {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-hi);
+    border-radius: 18px;
+    padding: 36px 40px;
+    text-align: center;
+    max-width: 400px;
+    animation: slideUp .4s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  .cov-icon {
+    font-size: 3rem;
+    margin-bottom: 14px;
+  }
+  .cov-box h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--green), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .cov-box p {
+    color: var(--text-muted);
+    font-size: .8rem;
+    margin-bottom: 22px;
+    line-height: 1.6;
+  }
+  .cov-points {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+  }
+  .cov-pt {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .68rem;
+  }
+  .cov-pt span { font-weight: 600; }
+  .cov-actions { display: flex; gap: 10px; flex-direction: column; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="step-badge">
+      <svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="currentColor"/></svg>
+      STEP 1 OF 3
+    </div>
+    <h1>5-Point <span>Synthesis</span></h1>
+    <p>Place 5 precision points (C1–C5) on the canvas to define the coupler curve path.</p>
+  </div>
+
+  <div class="sidebar-body">
+
+    <div class="sec-label">Precision Points</div>
+
+    <div class="point-list" id="point-list">
+      
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span>Progress</span>
+        <strong id="prog-text">0 / 5 placed</strong>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="prog-fill" style="width:0%"></div>
+      </div>
+      <div class="progress-dots" id="prog-dots"></div>
+    </div>
+
+    <div class="instr-card">
+      <div class="ic-title">
+        <svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 1a5 5 0 100 10A5 5 0 006 1zm0 2a.75.75 0 110 1.5A.75.75 0 016 3zm-.25 2.5h.5c.28 0 .5.22.5.5v3a.5.5 0 01-1 0V6.5h-.25a.5.5 0 010-1H5.75z" fill="currentColor"/></svg>
+        Instructions
+      </div>
+      <ul>
+        <li>Click anywhere on the canvas to place each point</li>
+        <li>Points are placed in order C1 → C2 → C3 → C4 → C5</li>
+        <li>Coordinates are shown in real-time next to each point</li>
+        <li>Use "Remove Last" to undo, "Clear All" to restart</li>
+        <li>After 5 points, proceed to Step 2</li>
+      </ul>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-primary" id="btn-next" disabled>
+        <svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1l6 6-6 6M1 7h12" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Proceed to Step 2
+      </button>
+      <button class="btn btn-secondary" id="btn-undo">
+        <svg width="13" height="13" viewBox="0 0 13 13"><path d="M2 6.5C2 4 4 2 6.5 2c1.5 0 2.8.7 3.7 1.8M2 2v4.5h4.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Remove Last Point
+      </button>
+      <button class="btn btn-danger" id="btn-clear">
+        <svg width="13" height="13" viewBox="0 0 13 13"><path d="M2 2l9 9M11 2l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Clear All
+      </button>
+    </div>
+
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="coord-display" id="live-coord">Move cursor over canvas to see coordinates</div>
+  </div>
+</aside>
+
+<main class="canvas-wrap" id="canvas-wrap">
+  <canvas id="cv"></canvas>
+</main>
+
+<div id="cursor-tip"></div>
+
+<div id="complete-overlay">
+  <div class="cov-box">
+    <div class="cov-icon"></div>
+    <h2>All 5 Points Placed!</h2>
+    <p>Your precision points are ready. You can proceed to Step 2 to begin the synthesis, or adjust points using "Remove Last".</p>
+    <div class="cov-points" id="cov-points"></div>
+    <div class="cov-actions">
+      <button class="btn btn-primary ready" onclick="goStep2()">
+        <svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1l6 6-6 6M1 7h12" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Continue to Step 2
+      </button>
+      <button class="btn btn-secondary" onclick="document.getElementById('complete-overlay').classList.remove('show')">
+        Keep Editing
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const nav = performance.getEntriesByType("navigation")[0];
+if (nav && nav.type === "reload") {
+  sessionStorage.clear();
+}
+
+const cv  = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const wrap = document.getElementById('canvas-wrap');
+
+const POINT_COLORS = ['#3b82f6','#10b981','#f59e0b','#a855f7','#ef4444'];
+const POINT_NAMES  = ['C1','C2','C3','C4','C5'];
+const MAX_PTS = 5;
+const HIT_RADIUS_PX = 20;   
+const MIN_DIST_U    = 12;   
+
+let pts = [];          
+let W=0, H=0;
+let gW=0, gH=0;
+const mg = {t:60, r:60, b:60, l:80};
+let X0=-120, X1=120, Y0=-100, Y1=100;
+
+let isViewPanning = false;
+let viewDragStart = null;
+let panX0_start = 0, panX1_start = 0;
+let panY0_start = 0, panY1_start = 0;
+
+let dragging  = null;   
+let didDrag   = false;  
+let hoveredIdx = -1;    
+
+function u2p(x, y){ return { px: mg.l + (x-X0)/(X1-X0)*gW, py: mg.t + gH - (y-Y0)/(Y1-Y0)*gH }; }
+function p2u(px, py){ return { x: X0 + (px-mg.l)/gW*(X1-X0), y: Y0 + (mg.t+gH-py)/gH*(Y1-Y0) }; }
+
+function resize(){
+  const rect = wrap.getBoundingClientRect();
+  W = rect.width;  H = rect.height;
+  cv.width  = W;   cv.height = H;
+  cv.style.width  = W + 'px';
+  cv.style.height = H + 'px';
+  gW = W - mg.l - mg.r;
+  gH = H - mg.t - mg.b;
+  
+  const aspect = gW / gH;
+  const ySpan  = Y1 - Y0;
+  const midX = (X0 + X1) / 2;
+  X0 = midX - (aspect * ySpan) / 2;
+  X1 = midX + (aspect * ySpan) / 2;
+  redraw();
+}
+window.addEventListener('resize', resize);
+
+function getCanvasPos(e){
+  const rect = cv.getBoundingClientRect();
+  const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+  const cy = (e.clientY ?? e.touches[0].clientY) - rect.top;
+  return {px: cx, py: cy};
+}
+
+function hitExistingPoint(px, py){
+  let best = -1, bestD = Infinity;
+  for(let i = 0; i < pts.length; i++){
+    const {px:cx, py:cy} = u2p(pts[i].x, pts[i].y);
+    const d = Math.hypot(px-cx, py-cy);
+    if(d < HIT_RADIUS_PX && d < bestD){ bestD = d; best = i; }
+  }
+  return best;
+}
+
+function hasCollision(nx, ny, excludeIdx){
+  for(let i = 0; i < pts.length; i++){
+    if(i === excludeIdx) continue;
+    if(Math.hypot(nx - pts[i].x, ny - pts[i].y) < MIN_DIST_U) return true;
+  }
+  return false;
+}
+
+function inCanvas(px,py){
+  return px >= mg.l && px <= mg.l+gW && py >= mg.t && py <= mg.t+gH;
+}
+
+cv.addEventListener('contextmenu', e => e.preventDefault());
+
+cv.addEventListener('mousedown', e => {
+  if (e.button === 1 || e.button === 2 || e.shiftKey) {
+    isViewPanning = true;
+    viewDragStart = { x: e.clientX, y: e.clientY };
+    panX0_start = X0; panX1_start = X1;
+    panY0_start = Y0; panY1_start = Y1;
+    cv.style.cursor = 'move';
+    e.preventDefault();
+    return;
+  }
+
+  const {px,py} = getCanvasPos(e);
+  const idx = hitExistingPoint(px, py);
+  if(idx >= 0){
+    dragging = idx;
+    didDrag  = false;
+    cv.style.cursor = 'grabbing';
+    e.preventDefault();
+  }
+});
+
+cv.addEventListener('mouseup', (e) => {
+  if(isViewPanning) {
+    isViewPanning = false;
+    cv.style.cursor = 'crosshair';
+    if(Math.hypot(e.clientX - viewDragStart.x, e.clientY - viewDragStart.y) > 2){
+      didDrag = true; 
+    }
+  }
+  if(dragging !== null){
+    dragging = null;
+    cv.style.cursor = hoveredIdx >= 0 ? 'grab' : 'crosshair';
+  }
+});
+
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  const zoomFactor = 1.05;
+  const factor = e.deltaY < 0 ? 1/zoomFactor : zoomFactor;
+  
+  const {px, py} = getCanvasPos(e);
+  const u = p2u(px, py);
+
+  const spanX = X1 - X0;
+  const spanY = Y1 - Y0;
+  const newSpanX = spanX * factor;
+  const newSpanY = spanY * factor;
+  
+  X0 = u.x - ((px - mg.l) / gW) * newSpanX;
+  X1 = X0 + newSpanX;
+  Y0 = u.y - ((mg.t + gH - py) / gH) * newSpanY;
+  Y1 = Y0 + newSpanY;
+  
+  redraw();
+}, { passive: false });
+
+cv.addEventListener('click', e => {
+  if(didDrag){ didDrag = false; return; }   
+  if(pts.length >= MAX_PTS) return;
+  const {px,py} = getCanvasPos(e);
+  if(!inCanvas(px,py)) return;
+  if(hitExistingPoint(px, py) >= 0) return;  
+  const u  = p2u(px, py);
+  const nx = Math.round(u.x*10)/10;
+  const ny = Math.round(u.y*10)/10;
+  if(hasCollision(nx, ny, -1)) return;       
+  pts.push({x: nx, y: ny});
+  onPtsChange();
+  redraw();
+  if(pts.length === MAX_PTS){
+    setTimeout(showCompletion, 400);
+  }
+});
+
+cv.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const {px,py} = getCanvasPos(e);
+  const idx = hitExistingPoint(px, py);
+  if(idx >= 0){
+    dragging = idx; didDrag = false; return;
+  }
+  if(pts.length >= MAX_PTS) return;
+  if(!inCanvas(px,py)) return;
+  const u  = p2u(px, py);
+  const nx = Math.round(u.x*10)/10;
+  const ny = Math.round(u.y*10)/10;
+  if(hasCollision(nx, ny, -1)) return;
+  pts.push({x: nx, y: ny});
+  onPtsChange(); redraw();
+  if(pts.length === MAX_PTS) setTimeout(showCompletion, 400);
+}, {passive: false});
+
+cv.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if(dragging === null) return;
+  const {px,py} = getCanvasPos(e);
+  if(!inCanvas(px,py)) return;
+  const u  = p2u(px, py);
+  const nx = Math.round(u.x*10)/10;
+  const ny = Math.round(u.y*10)/10;
+  if(!hasCollision(nx, ny, dragging)){
+    pts[dragging] = {x: nx, y: ny};
+    didDrag = true;
+    onPtsChange(); redraw();
+  }
+}, {passive: false});
+
+cv.addEventListener('touchend', e => {
+  e.preventDefault();
+  dragging = null; didDrag = false;
+}, {passive: false});
+
+const tip = document.getElementById('cursor-tip');
+const liveCoord = document.getElementById('live-coord');
+
+cv.addEventListener('mousemove', e => {
+  if (isViewPanning) {
+    const dx = e.clientX - viewDragStart.x;
+    const dy = e.clientY - viewDragStart.y;
+    const du_x = dx * (panX1_start - panX0_start) / gW;
+    const du_y = dy * (panY1_start - panY0_start) / gH;
+    
+    X0 = panX0_start - du_x;
+    X1 = panX1_start - du_x;
+    Y0 = panY0_start + du_y;
+    Y1 = panY1_start + du_y;
+    redraw();
+    return;
+  }
+
+  const rect = cv.getBoundingClientRect();
+  const px = e.clientX - rect.left;
+  const py = e.clientY - rect.top;
+
+  if(dragging !== null){
+    if(!inCanvas(px, py)) return;
+    const u  = p2u(px, py);
+    const nx = Math.round(u.x*10)/10;
+    const ny = Math.round(u.y*10)/10;
+    if(!hasCollision(nx, ny, dragging)){
+      pts[dragging] = {x: nx, y: ny};
+      didDrag = true;
+      onPtsChange();
+      redraw();
+    }
+    liveCoord.textContent = `Dragging ${POINT_NAMES[dragging]}: (${nx.toFixed(1)}, ${ny.toFixed(1)})`;
+    tip.textContent = `${POINT_NAMES[dragging]} → (${nx.toFixed(1)}, ${ny.toFixed(1)})`;
+    tip.style.color = POINT_COLORS[dragging];
+    tip.style.borderColor = POINT_COLORS[dragging] + '66';
+    tip.style.left = (e.clientX + 14) + 'px';
+    tip.style.top  = (e.clientY - 12) + 'px';
+    tip.classList.add('visible');
+    return;
+  }
+
+  const u  = p2u(px, py);
+  const xi = Math.round(u.x * 10)/10;
+  const yi = Math.round(u.y * 10)/10;
+
+  const hitIdx = hitExistingPoint(px, py);
+  const prevHov = hoveredIdx;
+  hoveredIdx = hitIdx;
+  if(prevHov !== hoveredIdx) redraw();
+
+  if(hitIdx >= 0){
+    
+    cv.style.cursor = 'grab';
+    const p = pts[hitIdx];
+    liveCoord.textContent = `${POINT_NAMES[hitIdx]}: (${p.x.toFixed(1)}, ${p.y.toFixed(1)}) — drag to move`;
+    tip.textContent = `${POINT_NAMES[hitIdx]} — drag to move`;
+    tip.style.color = POINT_COLORS[hitIdx];
+    tip.style.borderColor = POINT_COLORS[hitIdx] + '66';
+    tip.style.left = (e.clientX + 14) + 'px';
+    tip.style.top  = (e.clientY - 12) + 'px';
+    tip.classList.add('visible');
+  } else if(pts.length < MAX_PTS && inCanvas(px,py)){
+    cv.style.cursor = 'crosshair';
+    const nextName  = POINT_NAMES[pts.length];
+    const nextColor = POINT_COLORS[pts.length];
+    tip.textContent = `Click to place ${nextName}  (${xi.toFixed(1)}, ${yi.toFixed(1)})`;
+    tip.style.color = nextColor;
+    tip.style.borderColor = nextColor + '66';
+    tip.style.left = (e.clientX + 14) + 'px';
+    tip.style.top  = (e.clientY - 12) + 'px';
+    tip.classList.add('visible');
+    liveCoord.textContent = `x = ${xi.toFixed(1)}, y = ${yi.toFixed(1)}`;
+  } else {
+    cv.style.cursor = 'crosshair';
+    tip.classList.remove('visible');
+    liveCoord.textContent = pts.length >= MAX_PTS
+      ? 'All 5 points placed — drag any point to reposition'
+      : `x = ${xi.toFixed(1)}, y = ${yi.toFixed(1)}`;
+  }
+});
+
+cv.addEventListener('mouseleave', () => {
+  if(dragging !== null) return; 
+  hoveredIdx = -1;
+  tip.classList.remove('visible');
+  liveCoord.textContent = 'Move cursor over canvas to see coordinates';
+  redraw();
+});
+
+document.getElementById('btn-undo').addEventListener('click', () => {
+  if(!pts.length) return;
+  pts.pop();
+  onPtsChange();
+  redraw();
+  document.getElementById('complete-overlay').classList.remove('show');
+});
+
+document.getElementById('btn-clear').addEventListener('click', () => {
+  pts = [];
+  onPtsChange();
+  redraw();
+  document.getElementById('complete-overlay').classList.remove('show');
+});
+
+document.getElementById('btn-next').addEventListener('click', goStep2);
+
+function goStep2(){
+  sessionStorage.setItem('fivepoint_pts', JSON.stringify(pts));
+  window.location.href = 'step2_pairs.html';
+}
+
+function onPtsChange(){
+  updateSidebar();
+  const done = pts.length === MAX_PTS;
+  document.getElementById('btn-next').disabled = !done;
+  document.getElementById('btn-next').classList.toggle('ready', done);
+}
+
+function updateSidebar(){
+  const list = document.getElementById('point-list');
+  list.innerHTML = '';
+  for(let i=0; i<MAX_PTS; i++){
+    const placed = i < pts.length;
+    const active  = i === pts.length;
+    const row = document.createElement('div');
+    row.className = `point-row${placed?' placed':''}${active?' active':''}`;
+    const color = POINT_COLORS[i];
+    let status, statusClass;
+    if(placed){ status='Placed'; statusClass='status-done'; }
+    else if(active){ status='Next →'; statusClass='status-active'; }
+    else { status='Waiting'; statusClass='status-waiting'; }
+    row.innerHTML = `
+      <div class="pt-dot" style="background:${placed?color:'transparent'};border-color:${color};color:${color}"></div>
+      <div class="pt-info">
+        <div class="pt-name" style="color:${color}">${POINT_NAMES[i]}</div>
+        <div class="pt-coord">${placed ? `(${pts[i].x.toFixed(1)}, ${pts[i].y.toFixed(1)})` : '— waiting —'}</div>
+      </div>
+      <div class="pt-status ${statusClass}">${status}</div>
+    `;
+    list.appendChild(row);
+  }
+  
+  const n = pts.length;
+  document.getElementById('prog-text').textContent = `${n} / 5 placed`;
+  document.getElementById('prog-fill').style.width  = (n/5*100) + '%';
+  
+  const dotsEl = document.getElementById('prog-dots');
+  dotsEl.innerHTML = '';
+  for(let i=0; i<MAX_PTS; i++){
+    const d = document.createElement('div');
+    const placed = i < n;
+    const active = i === n;
+    d.className = `pd${placed?' done':''}${active?' active':''}`;
+    d.style.background = placed ? POINT_COLORS[i] : '';
+    dotsEl.appendChild(d);
+  }
+}
+
+function showCompletion(){
+  const covPts = document.getElementById('cov-points');
+  covPts.innerHTML = pts.map((p,i)=>`
+    <div class="cov-pt" style="border-color:${POINT_COLORS[i]}44;background:${POINT_COLORS[i]}10">
+      <span style="color:${POINT_COLORS[i]}">${POINT_NAMES[i]}</span><br>
+      (${p.x.toFixed(1)}, ${p.y.toFixed(1)})
+    </div>
+  `).join('');
+  document.getElementById('complete-overlay').classList.add('show');
+}
+
+function redraw(){
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.roundRect(0, 0, W, H, 0);
+  ctx.fill();
+
+  drawGrid();
+  drawAxes();
+  drawPoints();
+  drawNextHint();
+}
+
+function drawGrid(){
+  const step = pickGridStep();
+  ctx.strokeStyle = '#e8edf5';
+  ctx.lineWidth = 0.7;
+  const xStart = Math.ceil(X0/step)*step;
+  const yStart = Math.ceil(Y0/step)*step;
+  for(let x=xStart; x<=X1+step; x+=step){
+    if(Math.abs(x)<1e-6) continue;
+    const {px} = u2p(x, 0);
+    ctx.beginPath(); ctx.moveTo(px, mg.t); ctx.lineTo(px, mg.t+gH); ctx.stroke();
+  }
+  for(let y=yStart; y<=Y1+step; y+=step){
+    if(Math.abs(y)<1e-6) continue;
+    const {py} = u2p(0, y);
+    ctx.beginPath(); ctx.moveTo(mg.l, py); ctx.lineTo(mg.l+gW, py); ctx.stroke();
+  }
+}
+
+function pickGridStep(){
+  const range = X1 - X0;
+  if(range > 400) return 50;
+  if(range > 200) return 20;
+  return 10;
+}
+
+function drawAxes(){
+  const O = u2p(0, 0);
+  const step = pickGridStep();
+
+  ctx.strokeStyle = '#b0bec8';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(mg.l, O.py); ctx.lineTo(mg.l+gW, O.py); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(O.px, mg.t); ctx.lineTo(O.px, mg.t+gH); ctx.stroke();
+
+  ctx.fillStyle = '#b0bec8';
+  const arr = 8;
+  ctx.beginPath(); ctx.moveTo(mg.l+gW, O.py); ctx.lineTo(mg.l+gW-arr, O.py-arr/2); ctx.lineTo(mg.l+gW-arr, O.py+arr/2); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(O.px, mg.t); ctx.lineTo(O.px-arr/2, mg.t+arr); ctx.lineTo(O.px+arr/2, mg.t+arr); ctx.closePath(); ctx.fill();
+
+  ctx.font = 'bold 13px Inter, sans-serif';
+  ctx.fillStyle = '#64748b';
+  ctx.fillText('X', mg.l+gW-8, O.py - 12);
+  ctx.fillText('Y', O.px + 10, mg.t + 12);
+  ctx.fillText('O', O.px - 18, O.py + 14);
+
+  const xStart = Math.ceil(X0/step)*step;
+  const yStart = Math.ceil(Y0/step)*step;
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.fillStyle = '#94a3b8';
+  ctx.textAlign = 'center';
+  for(let x=xStart; x<=X1+step; x+=step){
+    if(!x) continue;
+    const {px} = u2p(x, 0);
+    ctx.fillText(x, px, O.py + 16);
+    
+    ctx.strokeStyle = '#c8d3de'; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(px, O.py-3); ctx.lineTo(px, O.py+3); ctx.stroke();
+  }
+  ctx.textAlign = 'right';
+  for(let y=yStart; y<=Y1+step; y+=step){
+    if(!y) continue;
+    const {py} = u2p(0, y);
+    ctx.fillText(y, O.px - 6, py + 4);
+    ctx.strokeStyle = '#c8d3de'; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(O.px-3, py); ctx.lineTo(O.px+3, py); ctx.stroke();
+  }
+  ctx.textAlign = 'left';
+}
+
+function drawPoints(){
+  for(let i=0; i<pts.length; i++){
+    const p = pts[i];
+    const {px, py} = u2p(p.x, p.y);
+    const color   = POINT_COLORS[i];
+    const name    = POINT_NAMES[i];
+    const isDrag  = dragging === i;
+    const isHover = hoveredIdx === i && !isDrag;
+
+    if(isDrag){
+      ctx.save();
+      ctx.beginPath(); ctx.arc(px, py, 28, 0, 2*Math.PI);
+      ctx.fillStyle = color + '22'; ctx.fill();
+      ctx.beginPath(); ctx.arc(px, py, 28, 0, 2*Math.PI);
+      ctx.strokeStyle = color + '55'; ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.restore();
+    }
+
+    if(isHover){
+      ctx.save();
+      ctx.beginPath(); ctx.arc(px, py, 20, 0, 2*Math.PI);
+      ctx.fillStyle = color + '1a'; ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.beginPath(); ctx.arc(px, py, 18, 0, 2*Math.PI);
+    ctx.fillStyle = color + '14';
+    ctx.fill();
+
+    const r = isDrag ? 14 : 12;
+    ctx.beginPath(); ctx.arc(px, py, r, 0, 2*Math.PI);
+    ctx.fillStyle = isDrag ? color : color + 'cc';
+    ctx.fill();
+
+    ctx.beginPath(); ctx.arc(px, py, 4.5, 0, 2*Math.PI);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = isDrag ? 3.5 : 2.5;
+    ctx.beginPath(); ctx.arc(px, py, r, 0, 2*Math.PI); ctx.stroke();
+
+    ctx.font = `bold ${isDrag ? 14 : 13}px Inter, sans-serif`;
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.fillText(name, px, py - (isDrag ? 23 : 19));
+
+    const coordTxt = `(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`;
+    ctx.font = '10px JetBrains Mono, monospace';
+    const tw = ctx.measureText(coordTxt).width;
+    const pillW = tw + 14, pillH = 16;
+    const pillX = px - pillW/2;
+    const pillY = py + (isDrag ? 20 : 17);
+
+    ctx.fillStyle = isDrag ? color + '44' : color + '22';
+    ctx.strokeStyle = isDrag ? color + 'aa' : color + '66';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(pillX, pillY, pillW, pillH, 4);
+    ctx.fill(); ctx.stroke();
+
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.fillText(coordTxt, px, pillY + 11);
+  }
+  ctx.textAlign = 'left';
+}
+
+function drawNextHint(){
+  if(pts.length >= MAX_PTS) return;
+  const i = pts.length;
+  const color = POINT_COLORS[i];
+  const name  = POINT_NAMES[i];
+
+  ctx.font = '600 13px Inter, sans-serif';
+  ctx.fillStyle = color + 'cc';
+  ctx.textAlign = 'left';
+  const msg = `Click to place ${name}`;
+  const mw = ctx.measureText(msg).width;
+
+  const bx = mg.l + 12;
+  const by = mg.t + 12;
+  ctx.fillStyle = color + '18';
+  ctx.beginPath(); ctx.roundRect(bx-6, by-14, mw+20, 24, 6); ctx.fill();
+  ctx.fillStyle = color;
+  ctx.fillText(msg, bx+4, by+2);
+  ctx.textAlign = 'left';
+}
+
+function drawCanvasBorder(){
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(mg.l, mg.t, gW, gH);
+}
+
+updateSidebar();
+resize();
+</script>
+
+<style>
+#guide-fab{position:fixed;top:16px;right:16px;z-index:9999;width:44px;height:44px;border-radius:50%;border:2px solid rgba(99,179,237,.5);background:linear-gradient(135deg,#1e3a5f,#0f2744);box-shadow:0 4px 20px rgba(0,0,0,.45);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .3s;animation:fab-pulse 3s ease-in-out infinite;}
+#guide-fab:hover{transform:scale(1.12);box-shadow:0 6px 28px rgba(0,0,0,.5),0 0 0 6px rgba(99,179,237,.18);}
+@keyframes fab-pulse{0%,100%{box-shadow:0 4px 20px rgba(0,0,0,.45),0 0 0 0 rgba(99,179,237,.3)}50%{box-shadow:0 4px 20px rgba(0,0,0,.45),0 0 0 7px rgba(99,179,237,.08)}}
+#guide-overlay{position:fixed;inset:0;z-index:10000;background:rgba(4,10,22,.8);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:20px;}
+#guide-overlay.open{display:flex;}
+#guide-modal{width:min(700px,100%);max-height:92vh;overflow-y:auto;background:linear-gradient(160deg,#0b1c35,#071426);border:1.5px solid #1e3a5e;border-radius:22px;padding:32px 30px 28px;box-shadow:0 30px 80px rgba(0,0,0,.7);position:relative;animation:modal-in .35s cubic-bezier(.34,1.3,.64,1);}
+@keyframes modal-in{from{transform:translateY(22px) scale(.96);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+#guide-modal::-webkit-scrollbar{width:5px}#guide-modal::-webkit-scrollbar-thumb{background:#1e3a5e;border-radius:3px}
+#guide-close{position:absolute;top:16px;right:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:50%;width:32px;height:32px;color:#94a3b8;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,color .2s;font-family:sans-serif;}
+#guide-close:hover{background:rgba(239,68,68,.25);color:#fca5a5;}
+.gd-header{text-align:center;margin-bottom:28px;}
+.gd-pill{display:inline-flex;align-items:center;gap:7px;background:rgba(99,179,237,.1);border:1px solid rgba(99,179,237,.25);border-radius:30px;padding:5px 16px;font-size:.7rem;font-weight:700;letter-spacing:.08em;color:#63b3ed;margin-bottom:12px;}
+.gd-title{font-size:1.35rem;font-weight:800;background:linear-gradient(135deg,#63b3ed,#a78bfa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;}
+.gd-sub{font-size:.77rem;color:#64748b;}
+.gd-steps{display:flex;flex-direction:column;gap:12px;}
+.gd-card{display:flex;gap:14px;align-items:flex-start;background:rgba(255,255,255,.03);border:1.5px solid rgba(255,255,255,.06);border-radius:16px;padding:16px 18px;position:relative;overflow:hidden;}
+.gd-card.gd-current{border-color:rgba(99,179,237,.5);background:rgba(99,179,237,.07);}
+.gd-card.gd-done{border-color:rgba(52,211,153,.22)!important;background:rgba(52,211,153,.04)!important;}
+.gd-current-badge{position:absolute;top:12px;right:14px;background:rgba(99,179,237,.25);color:#63b3ed;font-size:.6rem;font-weight:700;letter-spacing:.06em;padding:2px 9px;border-radius:20px;border:1px solid rgba(99,179,237,.4);font-family:'Inter',sans-serif;}
+.gd-icon{width:46px;height:46px;min-width:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.08);}
+.gd-info{flex:1;min-width:0;}
+.gd-step-num{font-size:.62rem;font-weight:700;letter-spacing:.07em;color:#64748b;margin-bottom:3px;font-family:'Inter',sans-serif;}
+.gd-step-title{font-size:.95rem;font-weight:700;color:#e2eaf6;margin-bottom:6px;font-family:'Inter',sans-serif;}
+.gd-bullets{list-style:none;display:flex;flex-direction:column;gap:5px;}
+.gd-bullets li{font-size:.73rem;color:#94a3b8;padding-left:16px;position:relative;line-height:1.5;font-family:'Inter',sans-serif;}
+.gd-bullets li::before{content:'→';position:absolute;left:0;font-size:.65rem;}
+.gd-tip{font-size:.68rem;color:#4a6080;background:rgba(99,179,237,.06);border:1px solid rgba(99,179,237,.12);border-radius:8px;padding:6px 10px;margin-top:8px;font-family:'Inter',sans-serif;}
+.gd-footer{margin-top:22px;text-align:center;font-size:.68rem;color:#3a5070;font-family:'Inter',sans-serif;}
+</style>
+<button id="guide-fab" onclick="document.getElementById('guide-overlay').classList.add('open')" title="Step 1 — How to use this page">
+  <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9.5" stroke="#63b3ed" stroke-width="1.5"/><text x="11" y="16" text-anchor="middle" font-family="Inter,sans-serif" font-weight="800" font-size="13" fill="#63b3ed">?</text></svg>
+</button>
+<div id="guide-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+<div id="guide-modal">
+  <button id="guide-close" onclick="document.getElementById('guide-overlay').classList.remove('open')">&#x2715;</button>
+  <div class="gd-header">
+    <div class="gd-pill"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="currentColor"/></svg>HOW IT WORKS</div>
+    <div class="gd-title">4-Bar Linkage &#8212; Step by Step</div>
+    <div class="gd-sub">Read each step below and follow along. Even a kid can do it! &#x1F680;</div>
+  </div>
+  <div class="gd-steps">
+    <div class="gd-card" id="gd-s1">
+      <div class="gd-icon" style="background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.25)">&#x1F3AF;</div>
+      <div class="gd-info">
+        <div class="gd-step-num">STEP 1</div>
+        <div class="gd-step-title">Drop 5 Target Dots on the Canvas</div>
+        <ul class="gd-bullets">
+          <li>Think of 5 places a robot arm should touch &#8212; those are your targets</li>
+          <li>Click anywhere on the <strong>white drawing area</strong> to drop a colored dot</li>
+          <li>Drop them one by one &#8212; they will be named <strong>C1, C2, C3, C4, C5</strong> automatically</li>
+          <li>Made a mistake? Click and drag any dot to move it to a new position</li>
+          <li>Keep dots spread apart &#8212; they must not sit on top of each other!</li>
+          <li>Once all 5 dots are placed, press <strong style="color:#63b3ed">Proceed to Step 2 &#8594;</strong> in the sidebar</li>
+        </ul>
+        <div class="gd-tip">&#x1F5B1;&#xFE0F; <strong>Move the view:</strong> Right-click + drag OR hold Shift + drag to pan left/right/up/down &nbsp;|&nbsp; Scroll wheel to zoom in or out</div>
+      </div>
+    </div>
+    <div class="gd-card" id="gd-s2">
+      <div class="gd-icon" style="background:rgba(6,182,212,.1);border-color:rgba(6,182,212,.25)">&#x1F535;</div>
+      <div class="gd-info">
+        <div class="gd-step-num">STEP 2</div>
+        <div class="gd-step-title">Pick 2 Pairs of Dots to Find the Rocking Hinge (Hr)</div>
+        <ul class="gd-bullets">
+          <li>Click any 2 of your 5 dots &#8212; a <strong style="color:#06b6d4">blue line</strong> will appear exactly in the middle between them</li>
+          <li>Now click 2 more different dots &#8212; an <strong style="color:#f97316">orange line</strong> appears in the middle of those two</li>
+          <li>Where the blue and orange lines cross is the special point <strong style="color:#10b981">Hr</strong></li>
+          <li><strong>Hr</strong> is the fixed hinge on the ground where the rocking arm is attached</li>
+          <li>Once both pairs are picked and Hr appears, press <strong style="color:#63b3ed">Proceed to Step 3 &#8594;</strong></li>
+          <li>Picked the wrong dot? Press <strong>Undo Last Selection</strong> to go back one step</li>
+        </ul>
+        <div class="gd-tip">&#x1F5B1;&#xFE0F; <strong>Move the view:</strong> Right-click + drag OR hold Shift + drag to pan &nbsp;|&nbsp; Scroll wheel to zoom</div>
+      </div>
+    </div>
+    <div class="gd-card" id="gd-s3">
+      <div class="gd-icon" style="background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.25)">&#x1F300;</div>
+      <div class="gd-info">
+        <div class="gd-step-num">STEP 3</div>
+        <div class="gd-step-title">Spin the 3 Glowing Lines Until They Line Up</div>
+        <ul class="gd-bullets">
+          <li>You will now see 3 glowing lines joined like a fan, spinning around <strong>Hr</strong></li>
+          <li><strong>Left-click + drag</strong> the drawing area left or right to spin the fan</li>
+          <li>Use the <strong>angle slider</strong> in the sidebar for tiny fine-tune movements</li>
+          <li>Your goal: spin until the <strong style="color:#fbbf24">yellow line in the middle (T&#x2082;)</strong> exactly covers the <strong style="color:#f97316">orange dashed line (B&#x2082;)</strong></li>
+          <li>When they match, the badge turns purple &#8212; or press <strong>Snap to Align</strong> to jump there in one click</li>
+          <li>Once lined up, press <strong style="color:#63b3ed">Proceed to Step 4 &#8594;</strong></li>
+        </ul>
+        <div class="gd-tip">&#x1F5B1;&#xFE0F; <strong>Move the view:</strong> Right-click + drag OR hold Shift + drag to pan &nbsp;|&nbsp; Scroll wheel to zoom</div>
+      </div>
+    </div>
+    <div class="gd-card" id="gd-s4">
+      <div class="gd-icon" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.25)">&#x2699;&#xFE0F;</div>
+      <div class="gd-info">
+        <div class="gd-step-num">STEP 4</div>
+        <div class="gd-step-title">Grow Circles to Find the Spinning Hinge (Hc) and End Point B</div>
+        <ul class="gd-bullets">
+          <li>Drag the <strong style="color:#ef4444">R slider</strong> on the left to make circles grow or shrink around your dots</li>
+          <li>When the circle from the <strong>first dot from Pair 1</strong> touches a glowing tracing line, a small crossing dot appears &#8212; that is <strong style="color:#ef4444">the first cut point</strong></li>
+          <li>The same circle size from the <strong>first dot from Pair 2</strong> gives you <strong style="color:#ef4444">the second cut point</strong></li>
+          <li>A line drawn through the middle of those two cut points will hit the tracing line at <strong style="color:#10b981">Hc</strong> &#8212; the spinning hinge!</li>
+          <li>Press <strong>Draw Hc Circle</strong> &#8212; you will see a large circle that the spinning arm follows</li>
+          <li>Press <strong>Congruent &#x25B3;</strong> &#8212; this draws helper triangles to find point <strong style="color:#3b82f6">B</strong> (the tip of the rocking arm)</li>
+          <li>Use <strong>Near Cut / Far Cut</strong> buttons to choose which crossing dot to use when two appear on the line</li>
+          <li>When <strong style="color:#10b981">Hc</strong> and <strong style="color:#3b82f6">B</strong> are both shown on screen, press <strong style="color:#63b3ed">Finish Synthesis &#8594;</strong></li>
+        </ul>
+        <div class="gd-tip">&#x1F5B1;&#xFE0F; <strong>Move the view:</strong> Right-click + drag OR hold Shift + drag to pan &nbsp;|&nbsp; Scroll wheel to zoom</div>
+      </div>
+    </div>
+    <div class="gd-card" id="gd-s5">
+      <div class="gd-icon" style="background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.25)">&#x1F3AC;</div>
+      <div class="gd-info">
+        <div class="gd-step-num">STEP 5</div>
+        <div class="gd-step-title">Watch Your Robot Arm Draw the Path!</div>
+        <ul class="gd-bullets">
+          <li>Press <strong style="color:#10b981">Form Linkage</strong> &#8212; the 4 arms of your machine will snap together!</li>
+          <li>The <strong style="color:#34d399">green arm</strong> spins around <strong>Hc</strong> (this is called the crank)</li>
+          <li>The <strong style="color:#60a5fa">blue arm</strong> rocks left and right around <strong>Hr</strong> (this is the rocker)</li>
+          <li>The <strong style="color:#fb923c">orange arm</strong> connects the crank and rocker (this is the coupler)</li>
+          <li>The <strong style="color:#f97316">orange dot</strong> on the orange arm is the pen tip &#8212; it should pass through all 5 of your target dots! &#x1F389;</li>
+          <li>Press <strong style="color:#fbbf24">Animate</strong> to start the motion. Drag the <strong>speed slider</strong> to go faster or slower</li>
+          <li>Toggle <strong>Primary / Crossed</strong> to try two different ways to connect the arms</li>
+        </ul>
+        <div class="gd-tip">&#x1F5B1;&#xFE0F; <strong>Move the view:</strong> Right-click + drag OR hold Shift + drag to pan &nbsp;|&nbsp; Scroll wheel to zoom</div>
+      </div>
+    </div>
+  </div>
+  <div class="gd-footer">&#x1F4A1; Press <strong>Escape</strong> or click anywhere outside this box to close</div>
+</div>
+</div>
+<script>
+(function(){
+  var cs=1;
+  var card=document.getElementById('gd-s'+cs);
+  if(card){card.classList.add('gd-current');var b=document.createElement('div');b.className='gd-current-badge';b.textContent='YOU ARE HERE';card.appendChild(b);}
+  for(var s=1;s<cs;s++){var p=document.getElementById('gd-s'+s);if(p)p.classList.add('gd-done');}
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')document.getElementById('guide-overlay').classList.remove('open');});
+})();
+</script>
+
+<style>
+#vikas-badge{
+  position:fixed;bottom:14px;right:16px;z-index:8888;
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 11px 5px 8px;
+  background:rgba(8,14,30,.72);
+  border:1px solid transparent;
+  border-radius:30px;
+  backdrop-filter:blur(10px);
+  font-family:'Inter','Segoe UI',sans-serif;
+  cursor:pointer;
+  box-shadow:0 0 0 1px rgba(139,92,246,.35),0 4px 18px rgba(0,0,0,.45);
+  transition:box-shadow .3s,transform .25s;
+  user-select:none;
+}
+#vikas-badge:hover{
+  box-shadow:0 0 0 1.5px rgba(139,92,246,.6),0 0 0 4px rgba(99,102,241,.12),0 6px 22px rgba(0,0,0,.5);
+  transform:translateY(-1px);
+}
+.vb-spark{font-size:10px;line-height:1;filter:drop-shadow(0 0 4px #a78bfa);}
+.vb-text{
+  font-size:10.5px;font-weight:300;letter-spacing:.04em;
+  background:linear-gradient(90deg,#93c5fd,#c4b5fd);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  white-space:nowrap;
+}
+.vb-copy{font-size:9px;font-weight:300;color:#c4b5fd;-webkit-text-fill-color:#c4b5fd;opacity:.75;margin-left:2px;}
+
+#credits-popup{
+  position:fixed;bottom:52px;right:16px;z-index:8889;
+  width:240px;
+  background:rgba(8,14,30,.88);
+  border:1px solid rgba(139,92,246,.3);
+  border-radius:14px;
+  padding:16px 18px;
+  box-shadow:0 8px 32px rgba(0,0,0,.55),0 0 0 1px rgba(139,92,246,.15);
+  backdrop-filter:blur(18px);
+  font-family:'Inter','Segoe UI',sans-serif;
+  opacity:0;pointer-events:none;
+  transform:translateY(8px) scale(.97);
+  transition:opacity .22s ease,transform .22s cubic-bezier(.34,1.3,.64,1);
+}
+#credits-popup.open{opacity:1;pointer-events:all;transform:translateY(0) scale(1);}
+.cp-title{
+  font-size:9px;font-weight:700;letter-spacing:.1em;
+  color:rgba(148,163,184,.45);margin-bottom:12px;
+  text-transform:uppercase;
+}
+.cp-row{display:flex;flex-direction:column;gap:8px;}
+.cp-item{
+  display:flex;flex-direction:column;gap:2px;
+  padding-bottom:8px;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+.cp-item:last-child{border-bottom:none;padding-bottom:0;}
+.cp-name{
+  font-size:11px;font-weight:600;
+  background:linear-gradient(90deg,#93c5fd,#c4b5fd);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.cp-desc{font-size:10px;font-weight:300;color:rgba(148,163,184,.7);line-height:1.5;}
+.cp-footer{
+  margin-top:12px;font-size:9px;font-weight:300;
+  color:rgba(148,163,184,.35);text-align:center;letter-spacing:.03em;
+}
+</style>
+
+<div id="credits-popup">
+  <div class="cp-title">Credits</div>
+  <div class="cp-row">
+    <div class="cp-item">
+      <span class="cp-name">Vikas</span>
+      <span class="cp-desc">Developer</span>
+    </div>
+    <div class="cp-item">
+      <span class="cp-name">AI&#8209;assisted</span>
+      <span class="cp-desc">Animation, link logic, Grashof condition, tracing lines</span>
+    </div>
+    <div class="cp-item">
+      <span class="cp-name">Tools</span>
+      <span class="cp-desc">Antigravity &nbsp;&middot;&nbsp; ChatGPT</span>
+    </div>
+  </div>
+  <div class="cp-footer">Built with AI support &nbsp;&#10022;</div>
+</div>
+
+<div id="vikas-badge" onclick="toggleCredits(event)">
+  <span class="vb-spark">&#10022;</span>
+  <span class="vb-text">Vikas &times; AI</span>
+  <span class="vb-copy">&copy;</span>
+</div>
+
+<script>
+(function(){
+  function toggleCredits(e){
+    e.stopPropagation();
+    document.getElementById('credits-popup').classList.toggle('open');
+  }
+  window.toggleCredits = toggleCredits;
+  document.addEventListener('click', function(e){
+    var p = document.getElementById('credits-popup');
+    var b = document.getElementById('vikas-badge');
+    if(p && !p.contains(e.target) && !b.contains(e.target)){
+      p.classList.remove('open');
+    }
+  });
+})();
+</script>
+</body>
+</html>

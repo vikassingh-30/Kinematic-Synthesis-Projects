@@ -1,0 +1,2049 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>5-Point Synthesis | Step 4 — Pivot Synthesis</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; user-select:none; }
+
+  :root {
+    --bg-deep:    #060d1a;
+    --bg-panel:   #0b1628;
+    --bg-card:    #0f1f35;
+    --border:     #1e3352;
+    --border-hi:  #2d4f7a;
+    --text-bright:#e2eaf6;
+    --text-muted: #64748b;
+    --text-dim:   #3a5070;
+    --green:      #10b981;
+    --amber:      #f59e0b;
+    --purple:     #a855f7;
+    --cyan:       #06b6d4;
+    --orange:     #f97316;
+    --trace:      #fbbf24;
+    --snap:       #a855f7;
+  }
+
+  body {
+    font-family:'Inter',sans-serif;
+    background:var(--bg-deep);
+    height:100vh; width:100vw;
+    overflow:hidden;
+    display:flex;
+    color:var(--text-bright);
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width:300px; min-width:300px;
+    height:100vh;
+    background:var(--bg-panel);
+    border-right:1px solid var(--border);
+    display:flex; flex-direction:column;
+    overflow:hidden;
+  }
+  .sidebar-header {
+    padding:18px 18px 14px;
+    border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg,#0d1e38 0%,var(--bg-panel) 100%);
+  }
+  .step-badge {
+    display:inline-flex; align-items:center; gap:6px;
+    background:rgba(251,191,36,.12);
+    border:1px solid rgba(251,191,36,.3);
+    border-radius:20px; padding:3px 10px;
+    font-size:.68rem; font-weight:600; color:var(--amber);
+    letter-spacing:.06em; margin-bottom:10px;
+  }
+  .sidebar-header h1 { font-size:1rem; font-weight:700; }
+  .sidebar-header h1 span { color:var(--trace); }
+  .sidebar-header p { font-size:.7rem; color:var(--text-muted); margin-top:5px; line-height:1.5; }
+
+  .sidebar-body {
+    flex:1; overflow-y:auto; padding:14px;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .sidebar-body::-webkit-scrollbar { width:4px; }
+  .sidebar-body::-webkit-scrollbar-thumb { background:var(--border-hi); border-radius:2px; }
+
+  .sec-label {
+    font-size:.64rem; font-weight:600; letter-spacing:.1em;
+    color:var(--text-dim); text-transform:uppercase;
+    padding-bottom:5px; border-bottom:1px solid var(--border);
+  }
+
+  /* Line list card */
+  .lines-card {
+    background:var(--bg-card); border-radius:10px;
+    padding:11px 13px; border:1px solid var(--border);
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .line-row {
+    display:flex; align-items:center; gap:10px;
+  }
+  .line-swatch {
+    width:24px; height:3px; border-radius:2px; flex-shrink:0;
+  }
+  .line-swatch.dashed {
+    background: repeating-linear-gradient(
+      90deg,
+      var(--trace) 0, var(--trace) 5px,
+      transparent 5px, transparent 10px
+    );
+    height:2px;
+  }
+  .line-swatch.solid { background:var(--trace); }
+  .line-info {}
+  .line-name { font-size:.72rem; font-weight:700; color:var(--text-bright); }
+  .line-desc { font-size:.63rem; color:var(--text-muted); }
+
+  /* Rotation card */
+  .rot-card {
+    background:var(--bg-card); border-radius:10px;
+    padding:12px 14px; border:1px solid var(--border);
+  }
+  .rot-header {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:10px;
+  }
+  .rot-title { font-size:.72rem; font-weight:600; color:var(--text-bright); }
+  .angle-badge {
+    font-family:'JetBrains Mono',monospace;
+    font-size:.78rem; font-weight:700; color:var(--trace);
+    background:rgba(251,191,36,.1);
+    border:1px solid rgba(251,191,36,.25);
+    border-radius:6px; padding:3px 9px;
+    transition:all .35s;
+  }
+  .angle-badge.snapped { color:var(--snap); background:rgba(168,85,247,.12); border-color:rgba(168,85,247,.35); }
+
+  input[type=range] {
+    -webkit-appearance:none; appearance:none;
+    width:100%; height:4px;
+    background:var(--border); border-radius:2px; outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance:none; appearance:none;
+    width:18px; height:18px; border-radius:50%;
+    background:var(--trace);
+    box-shadow:0 0 10px rgba(251,191,36,.5);
+    cursor:pointer; transition:transform .15s, background .35s;
+  }
+  input[type=range].snapped::-webkit-slider-thumb {
+    background:var(--snap);
+    box-shadow:0 0 12px rgba(168,85,247,.6);
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.25); }
+  .slider-labels {
+    display:flex; justify-content:space-between;
+    margin-top:5px; font-size:.6rem; color:var(--text-dim);
+    font-family:'JetBrains Mono',monospace;
+  }
+
+  /* Snap card */
+  .snap-card {
+    background:var(--bg-card); border-radius:10px;
+    padding:11px 13px; border:1px solid var(--border);
+    border-left:3px solid var(--amber);
+    transition:border-left-color .4s;
+  }
+  .snap-card.aligned { border-left-color:var(--snap); }
+  .snap-header {
+    display:flex; align-items:center; gap:6px; margin-bottom:7px;
+    font-size:.7rem; font-weight:600; color:var(--amber);
+    transition:color .4s;
+  }
+  .snap-card.aligned .snap-header { color:var(--snap); }
+  .snap-row {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:4px;
+  }
+  .snap-key { font-size:.65rem; color:var(--text-muted); }
+  .snap-val {
+    font-family:'JetBrains Mono',monospace;
+    font-size:.72rem; font-weight:600; color:var(--text-bright);
+  }
+  .snap-status {
+    font-size:.68rem; font-weight:700; padding:2px 9px;
+    border-radius:10px;
+    background:rgba(251,191,36,.1); color:var(--amber);
+    border:1px solid rgba(251,191,36,.2);
+    transition:all .4s;
+  }
+  .snap-status.aligned {
+    background:rgba(168,85,247,.15); color:var(--snap);
+    border-color:rgba(168,85,247,.35);
+    animation:pulse-snap 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse-snap {
+    0%,100%{ box-shadow:0 0 0 0 rgba(168,85,247,0); }
+    50%{ box-shadow:0 0 0 6px rgba(168,85,247,.18); }
+  }
+
+  /* Instructions */
+  .instr-card {
+    background:var(--bg-card); border-radius:10px;
+    padding:11px 13px; border:1px solid var(--border);
+    border-left:3px solid var(--cyan);
+  }
+  .instr-card .ic-title {
+    font-size:.7rem; font-weight:600; color:var(--cyan);
+    margin-bottom:5px; display:flex; align-items:center; gap:5px;
+  }
+  .instr-card ul { list-style:none; display:flex; flex-direction:column; gap:4px; }
+  .instr-card ul li {
+    font-size:.67rem; color:var(--text-muted);
+    padding-left:12px; position:relative;
+  }
+  .instr-card ul li::before { content:'→'; position:absolute; left:0; color:var(--cyan); }
+
+  /* Buttons */
+  .btn-group { display:flex; flex-direction:column; gap:7px; }
+  .btn {
+    width:100%; padding:10px 14px; border:none; border-radius:10px;
+    font-family:'Inter',sans-serif; font-size:.75rem; font-weight:600;
+    cursor:pointer; transition:all .2s;
+    display:flex; align-items:center; justify-content:center; gap:7px;
+    letter-spacing:.02em;
+  }
+  .btn:hover { transform:translateY(-1px); filter:brightness(1.12); }
+  .btn:active { transform:translateY(0); }
+  .btn:disabled { opacity:.4; cursor:not-allowed; transform:none !important; filter:none !important; }
+  .btn-snap {
+    background:linear-gradient(135deg,rgba(168,85,247,.35),rgba(168,85,247,.55));
+    color:#e9d5ff;
+    border:1px solid rgba(168,85,247,.45);
+    box-shadow:0 4px 14px rgba(168,85,247,.25);
+  }
+  .btn-snap:hover { box-shadow:0 4px 22px rgba(168,85,247,.45); }
+  .btn-reset {
+    background:var(--bg-card); color:var(--text-muted);
+    border:1px solid var(--border);
+  }
+  .btn-reset:hover { color:var(--text-bright); border-color:var(--border-hi); }
+  .btn-primary {
+    background:linear-gradient(135deg,#1d4ed8,#2563eb); color:#fff;
+    box-shadow:0 4px 15px rgba(37,99,235,.35);
+  }
+  .btn-primary.ready {
+    background:linear-gradient(135deg,#059669,#10b981);
+    box-shadow:0 4px 15px rgba(16,185,129,.4);
+    animation:glow-green 2s ease-in-out infinite;
+  }
+  @keyframes glow-green {
+    0%,100%{ box-shadow:0 4px 15px rgba(16,185,129,.4); }
+    50%{ box-shadow:0 4px 28px rgba(16,185,129,.7); }
+  }
+  .btn-danger {
+    background:rgba(127,29,29,.4); color:#fca5a5;
+    border:1px solid rgba(239,68,68,.2);
+  }
+  .btn-danger:hover { background:rgba(127,29,29,.7); }
+
+  /* Footer */
+  .sidebar-footer {
+    padding:12px 14px; border-top:1px solid var(--border);
+    background:var(--bg-deep);
+  }
+  .coord-display {
+    font-family:'JetBrains Mono',monospace;
+    font-size:.65rem; color:var(--text-dim); text-align:center;
+  }
+
+  /* Canvas */
+  .canvas-wrap {
+    flex:1; position:relative; overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+  }
+  canvas { display:block; cursor:grab; }
+  canvas.dragging { cursor:grabbing; }
+
+  /* Toast */
+  #toast {
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    background:#1a1a2e; border:1px solid var(--snap); border-radius:8px;
+    padding:10px 18px; font-size:.75rem; color:#e9d5ff;
+    pointer-events:none; opacity:0; transition:opacity .3s;
+    z-index:9999; white-space:nowrap;
+  }
+  #toast.show { opacity:1; }
+  #toast.error { background:#7f1d1d; border-color:#ef4444; color:#fca5a5; }
+</style>
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="step-badge" style="color:#ef4444;border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.12)">
+      <svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="currentColor"/></svg>
+      STEP 4 OF 4
+    </div>
+    <h1>Pivot <span style="color:#ef4444">Synthesis</span></h1>
+    <p>Rotate tracing paper to any angle, then set radius <strong style="color:#ef4444">R</strong> to cut arcs and find pivots <strong style="color:#ef4444">A₁</strong> and <strong style="color:#ef4444">A₃</strong>.</p>
+  </div>
+
+  <div class="sidebar-body">
+
+    <div class="sec-label">The 3 Tracing Lines</div>
+
+    <div class="lines-card">
+      <div class="line-row">
+        <div class="line-swatch dashed"></div>
+        <div class="line-info">
+          <div class="line-name" id="t1-label">T₁: Pa → ∞</div>
+          <div class="line-desc">Ray from Hr through Pair 1's First Point</div>
+        </div>
+      </div>
+      <div class="line-row">
+        <div class="line-swatch dashed"></div>
+        <div class="line-info">
+          <div class="line-name" id="t2-label">T₂: B(Pa,Pb)</div>
+          <div class="line-desc">Perp. bisector of Pair 1 tracking line</div>
+        </div>
+      </div>
+      <div class="line-row">
+        <div class="line-swatch dashed"></div>
+        <div class="line-info">
+          <div class="line-name" id="t3-label">T₃: Pc → ∞</div>
+          <div class="line-desc">Ray from Hr through Pair 2's tracking point</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-label">Rotation Control</div>
+
+    <div class="rot-card">
+      <div class="rot-header">
+        <span class="rot-title">Rotate about Hr</span>
+        <span class="angle-badge" id="angle-badge">θ = 0.0°</span>
+      </div>
+      <input type="range" id="rot-slider" min="-180" max="180" step="0.5" value="0">
+      <div class="slider-labels"><span>−180°</span><span>0°</span><span>+180°</span></div>
+    </div>
+
+    <div class="snap-card" id="snap-card">
+      <div class="snap-header">
+        <svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="6" cy="6" r="2" fill="currentColor"/></svg>
+        Snap Target — Align T₂ with B₂
+      </div>
+      <div class="snap-row">
+        <span class="snap-key">Target angle:</span>
+        <span class="snap-val" id="snap-angle-val">—°</span>
+      </div>
+      <div class="snap-row" style="margin-top:6px">
+        <span class="snap-key">Status:</span>
+        <span class="snap-status" id="snap-status">Not aligned</span>
+      </div>
+    </div>
+
+    <div class="sec-label" style="margin-top:4px">Arc Cutting</div>
+
+    <div class="rot-card" style="border-left:3px solid #ef4444">
+      <div class="rot-header">
+        <span class="rot-title">Arc Radius (R)</span>
+        <span class="angle-badge" id="radius-badge" style="color:#ef4444;background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25)">R = 40.0</span>
+      </div>
+      <input type="range" id="arc-slider" min="5" max="250" step="0.5" value="40" style="accent-color:#ef4444">
+      <div class="slider-labels"><span>5</span><span>250</span></div>
+      <div style="margin-top:10px;display:flex;gap:6px">
+        <button id="btn-near" onclick="setCutMode('near')" style="flex:1;padding:6px 0;border:1.5px solid #ef4444;border-radius:8px;background:rgba(239,68,68,.85);color:#fff;font-weight:700;font-size:.72rem;cursor:pointer">● Near Cut</button>
+        <button id="btn-far"  onclick="setCutMode('far')"  style="flex:1;padding:6px 0;border:1.5px solid #ef4444;border-radius:8px;background:transparent;color:#ef4444;font-weight:700;font-size:.72rem;cursor:pointer">○ Far Cut</button>
+      </div>
+    </div>
+
+    <div class="instr-card">
+      <div class="ic-title">
+        <svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 1a5 5 0 100 10A5 5 0 006 1zm0 2a.75.75 0 110 1.5A.75.75 0 016 3zm-.25 2.5h.5c.28 0 .5.22.5.5v3a.5.5 0 01-1 0V6.5h-.25a.5.5 0 010-1H5.75z" fill="currentColor"/></svg>
+        Instructions
+      </div>
+      <ul>
+        <li>Drag canvas (left-click) to rotate the tracing paper</li>
+        <li><strong>Right-click + drag</strong> or <strong>Shift + drag</strong> to pan the view</li>
+        <li><strong>Scroll wheel</strong> to zoom in / out</li>
+        <li>Set Radius R to cut arcs from anchor points</li>
+        <li>Toggle Near/Far to pick which cut points to use</li>
+        <li>Perp. bisector of A₁–A₃ meets C' line at <strong style="color:#10b981">Hc</strong></li>
+        <li>Click <strong>Draw Hc Circle</strong> when ready</li>
+      </ul>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-snap" id="btn-snap">
+        <svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="7" cy="7" r="2.5" fill="currentColor"/></svg>
+        Snap to Align
+      </button>
+      <button class="btn btn-reset" id="btn-reset">
+        <svg width="13" height="13" viewBox="0 0 13 13"><path d="M2 6.5C2 4 4 2 6.5 2c1.5 0 2.8.7 3.7 1.8M2 2v4.5h4.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Reset Rotation
+      </button>
+      <button class="btn btn-primary ready" id="btn-next">
+        <svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1l6 6-6 6M1 7h12" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Finish Synthesis
+      </button>
+      <button class="btn" id="btn-hc-circle" onclick="toggleHcCircle()" style="background:rgba(16,185,129,.12);color:#10b981;border:1.5px solid rgba(16,185,129,.4);">
+        <svg width="13" height="13" viewBox="0 0 13 13"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+        Draw Hc Circle
+      </button>
+      <button class="btn" id="btn-cong" onclick="toggleCongruentTriangle()" style="background:rgba(168,85,247,.12);color:#a855f7;border:1.5px solid rgba(168,85,247,.4);">
+        <svg width="13" height="13" viewBox="0 0 13 13"><path d="M1 12 L6.5 1 L12 12 Z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+        Congruent △
+      </button>
+      <button class="btn btn-danger" id="btn-back">
+        ← Back to Step 2
+      </button>
+    </div>
+
+  </div><!-- /sidebar-body -->
+
+  <div class="sidebar-footer">
+    <div class="coord-display" id="live-coord">Drag canvas to rotate tracing about Hr</div>
+  </div>
+</aside>
+
+<!-- ── CANVAS ── -->
+<main class="canvas-wrap" id="canvas-wrap">
+  <canvas id="cv"></canvas>
+</main>
+<div id="toast"></div>
+
+<script>
+const nav = performance.getEntriesByType("navigation")[0];
+if (nav && nav.type === "reload") {
+  sessionStorage.clear();
+  window.location.href = 'step1_points.html';
+}
+
+/* ═══════════════════════════════════════════════════════
+   5-POINT SYNTHESIS — STEP 3: TRACING
+   ═══════════════════════════════════════════════════════ */
+
+const POINT_COLORS = ['#3b82f6','#10b981','#f59e0b','#a855f7','#ef4444'];
+const POINT_NAMES  = ['C1','C2','C3','C4','C5'];
+const PAIR1_CLR    = '#06b6d4';
+const PAIR2_CLR    = '#f97316';
+const HR_CLR       = '#10b981';
+const TRACE_CLR    = '#fbbf24';
+const SNAP_CLR     = '#a855f7';
+const SNAP_THRESH  = 0.045; // ~2.6° — auto-snap threshold
+
+/* ── Load state ── */
+let pts = [], pair1 = null, pair2 = null, Hr = null;
+try {
+  const sp = sessionStorage.getItem('fivepoint_pts');
+  const p1 = sessionStorage.getItem('fivepoint_pair1');
+  const p2 = sessionStorage.getItem('fivepoint_pair2');
+  const hr = sessionStorage.getItem('fivepoint_Hr');
+  if(sp) pts   = JSON.parse(sp);
+  if(p1) pair1 = JSON.parse(p1);
+  if(p2) pair2 = JSON.parse(p2);
+  if(hr) Hr    = JSON.parse(hr);
+} catch(e){}
+
+/* Fallbacks */
+if(!pts || pts.length < 5 || !pair1 || !pair2) {
+  window.location.href = 'step1_points.html';
+}
+
+let arcRadius = 40;
+let cutMode = 'near';
+let showHcCircle = false;
+let showCongruentTriangle = false;
+
+// Viewport defaults — may be overridden by saved state below
+let X0=-160, X1=160, Y0=-100, Y1=100;
+let _restoredTracingAngle = null; // will be applied after canvas is ready
+
+try {
+  const st4 = sessionStorage.getItem('fivepoint_step4_state');
+  if(st4) {
+    const s = JSON.parse(st4);
+    if(s.arcRadius !== undefined)             arcRadius = s.arcRadius;
+    if(s.cutMode !== undefined)               cutMode = s.cutMode;
+    if(s.showHcCircle !== undefined)          showHcCircle = s.showHcCircle;
+    if(s.showCongruentTriangle !== undefined) showCongruentTriangle = s.showCongruentTriangle;
+    if(s.tracingAngle !== undefined)          _restoredTracingAngle = s.tracingAngle;
+    // Restore viewport exactly — preserve zoom+pan
+    if(s.X0 !== undefined) X0 = s.X0;
+    if(s.X1 !== undefined) X1 = s.X1;
+    if(s.Y0 !== undefined) Y0 = s.Y0;
+    if(s.Y1 !== undefined) Y1 = s.Y1;
+  }
+} catch(e){}
+
+/* ── Reorder pairs so their first points are the nearest ones ── */
+let bestD = Infinity, iBest = 0, jBest = 0;
+for(let i=0; i<2; i++){
+  for(let j=0; j<2; j++){
+    const d = Math.hypot(pts[pair1[i]].x - pts[pair2[j]].x, pts[pair1[i]].y - pts[pair2[j]].y);
+    if(d < bestD){ bestD = d; iBest = i; jBest = j; }
+  }
+}
+if(iBest === 1){ const t = pair1[0]; pair1[0] = pair1[1]; pair1[1] = t; }
+if(jBest === 1){ const t = pair2[0]; pair2[0] = pair2[1]; pair2[1] = t; }
+
+/* ── Geometry helpers ── */
+function perpBisector(p1, p2){
+  const mx=(p1.x+p2.x)/2, my=(p1.y+p2.y)/2;
+  const dx=p2.x-p1.x, dy=p2.y-p1.y;
+  const len=Math.hypot(dx,dy);
+  if(len<1e-9) return null;
+  const nx=-dy/len, ny=dx/len;   // unit vector along bisector
+  const ext=900;
+  return {
+    s:{x:mx-nx*ext, y:my-ny*ext},
+    e:{x:mx+nx*ext, y:my+ny*ext},
+    m:{x:mx, y:my},
+    nx, ny
+  };
+}
+
+function lineIntersect(l1,l2){
+  const x1=l1.s.x,y1=l1.s.y,x2=l1.e.x,y2=l1.e.y;
+  const x3=l2.s.x,y3=l2.s.y,x4=l2.e.x,y4=l2.e.y;
+  const d=(x1-x2)*(y3-y4)-(y1-y2)*(x3-x4);
+  if(Math.abs(d)<1e-9) return null;
+  const t=((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/d;
+  return {x:x1+t*(x2-x1), y:y1+t*(y2-y1)};
+}
+
+/* Rotate a logical-space point about Hr by angle (CCW positive) */
+function rotPt(pt, angle){
+  const dx=pt.x-Hr.x, dy=pt.y-Hr.y;
+  const c=Math.cos(angle), s=Math.sin(angle);
+  return { x: dx*c - dy*s + Hr.x, y: dx*s + dy*c + Hr.y };
+}
+
+/* ── Compute bisectors ── */
+const B1 = perpBisector(pts[pair1[0]], pts[pair1[1]]);
+const B2 = perpBisector(pts[pair2[0]], pts[pair2[1]]);
+
+/* Recompute Hr if not loaded */
+if(!Hr){
+  if(B1 && B2) Hr = lineIntersect(B1, B2);
+  if(!Hr) Hr = {x:0, y:0};
+}
+
+/*
+ * ── Snap angle ──
+ * We need to rotate the ray (Hr → B1.m) until it rigidly aligns with the ray (Hr → B2.m).
+ */
+const b1LogAng = Math.atan2(B1 ? B1.m.y - Hr.y : 0, B1 ? B1.m.x - Hr.x : 1);
+const b2LogAng = Math.atan2(B2 ? B2.m.y - Hr.y : 0, B2 ? B2.m.x - Hr.x : 1);
+
+let snapAngle = b2LogAng - b1LogAng;
+// Reduce to (-π, π]
+while(snapAngle >  Math.PI) snapAngle -= 2*Math.PI;
+while(snapAngle <= -Math.PI) snapAngle += 2*Math.PI;
+
+/* ── Canvas setup ── */
+const cv   = document.getElementById('cv');
+const ctx  = cv.getContext('2d');
+const wrap = document.getElementById('canvas-wrap');
+
+let W=0, H=0, gW=0, gH=0;
+const mg = {t:60, r:60, b:60, l:80};
+// X0/X1/Y0/Y1 declared above and may already be loaded from saved state
+
+// Pan state
+let isViewPanning = false;
+let viewDragStart = null;
+let panX0_start = 0, panX1_start = 0;
+let panY0_start = 0, panY1_start = 0;
+
+function u2p(x,y){ return { px:mg.l+(x-X0)/(X1-X0)*gW, py:mg.t+gH-(y-Y0)/(Y1-Y0)*gH }; }
+function p2u(px,py){ return { x:X0+(px-mg.l)/gW*(X1-X0), y:Y0+(mg.t+gH-py)/gH*(Y1-Y0) }; }
+
+function resize(){
+  const rect = wrap.getBoundingClientRect();
+  W = rect.width; H = rect.height;
+  cv.width = W; cv.height = H;
+  cv.style.width = W+'px'; cv.style.height = H+'px';
+  gW = W-mg.l-mg.r; gH = H-mg.t-mg.b;
+  const aspect = gW/gH, ySpan = Y1-Y0;
+  const midX = (X0 + X1) / 2;
+  X0 = midX - (aspect*ySpan)/2; X1 = midX + (aspect*ySpan)/2;
+  redraw();
+}
+window.addEventListener('resize', resize);
+
+/* ── Tracing state ── */
+let tracingAngle = 0;  // will be overridden by restore below if returning from step 5
+let isSnapped    = false;
+let wasSnapped   = false;
+
+/* ── Rotation drag ── */
+let rotDragging           = false;
+let rotDragStartAng       = 0;
+let tracingAngleAtDragStart = 0;
+
+function hrPixel(){ return u2p(Hr.x, Hr.y); }
+
+function mouseAngleFromHr(e){
+  const rect = cv.getBoundingClientRect();
+  const {px:hx, py:hy} = hrPixel();
+  return Math.atan2(-(e.clientY - rect.top - hy), e.clientX - rect.left - hx);
+}
+
+function distFromHrPx(e){
+  const rect = cv.getBoundingClientRect();
+  const {px:hx, py:hy} = hrPixel();
+  return Math.hypot(e.clientX - rect.left - hx, e.clientY - rect.top - hy);
+}
+
+// Prevent context menu to allow smooth right-click panning
+cv.addEventListener('contextmenu', e => e.preventDefault());
+
+cv.addEventListener('mousedown', e => {
+  if (e.button === 1 || e.button === 2 || e.shiftKey) {
+    isViewPanning = true;
+    viewDragStart = { x: e.clientX, y: e.clientY };
+    panX0_start = X0; panX1_start = X1;
+    panY0_start = Y0; panY1_start = Y1;
+    cv.style.cursor = 'move';
+    e.preventDefault();
+    return;
+  }
+
+  if(distFromHrPx(e) > 14){   // don't start drag directly on Hr
+    rotDragging            = true;
+    rotDragStartAng        = mouseAngleFromHr(e);
+    tracingAngleAtDragStart = tracingAngle;
+    cv.classList.add('dragging');
+    e.preventDefault();
+  }
+});
+
+cv.addEventListener('mousemove', e => {
+  if (isViewPanning) {
+    const dx = e.clientX - viewDragStart.x;
+    const dy = e.clientY - viewDragStart.y;
+    const du_x = dx * (panX1_start - panX0_start) / gW;
+    const du_y = dy * (panY1_start - panY0_start) / gH;
+    
+    X0 = panX0_start - du_x;
+    X1 = panX1_start - du_x;
+    Y0 = panY0_start + du_y;
+    Y1 = panY1_start + du_y;
+    redraw();
+    return;
+  }
+
+  /* always update coord display */
+  const rect = cv.getBoundingClientRect();
+  const px = e.clientX - rect.left, py = e.clientY - rect.top;
+  const u = p2u(px, py);
+  document.getElementById('live-coord').textContent =
+    `x = ${u.x.toFixed(1)}, y = ${u.y.toFixed(1)}    |    θ = ${(tracingAngle*180/Math.PI).toFixed(1)}°`;
+
+  if(!rotDragging) return;
+
+  // Compute new angle from drag delta
+  const curAng = mouseAngleFromHr(e);
+  let delta = curAng - rotDragStartAng;
+  /* keep delta in [-π, π] to prevent flipping */
+  if(delta >  Math.PI) delta -= 2*Math.PI;
+  if(delta < -Math.PI) delta += 2*Math.PI;
+
+  tracingAngle = tracingAngleAtDragStart + delta;
+
+  // Auto-snap when close
+  checkSnap();
+  updateSlider(); updateSidebar(); redraw();
+});
+
+cv.addEventListener('mouseup',    () => {
+  if(isViewPanning) {
+    isViewPanning = false;
+    cv.style.cursor = 'grab';
+  }
+  rotDragging = false; cv.classList.remove('dragging'); 
+});
+cv.addEventListener('mouseleave', () => { 
+  rotDragging = false; cv.classList.remove('dragging'); 
+});
+
+/* ── Zoom (Wheel) ── */
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  const zoomFactor = 1.05;
+  const factor = e.deltaY < 0 ? 1/zoomFactor : zoomFactor;
+  
+  const rect = cv.getBoundingClientRect();
+  const px = e.clientX - rect.left;
+  const py = e.clientY - rect.top;
+  const u = p2u(px, py);
+
+  const spanX = X1 - X0;
+  const spanY = Y1 - Y0;
+  const newSpanX = spanX * factor;
+  const newSpanY = spanY * factor;
+  
+  X0 = u.x - ((px - mg.l) / gW) * newSpanX;
+  X1 = X0 + newSpanX;
+  Y0 = u.y - ((mg.t + gH - py) / gH) * newSpanY;
+  Y1 = Y0 + newSpanY;
+  
+  redraw();
+}, { passive: false });
+
+/* Touch support */
+cv.addEventListener('touchstart', e => {
+  if(e.touches.length === 1){
+    const t = e.touches[0];
+    if(distFromHrPx(t) > 14){
+      rotDragging            = true;
+      rotDragStartAng        = mouseAngleFromHr(t);
+      tracingAngleAtDragStart = tracingAngle;
+    }
+    e.preventDefault();
+  }
+}, {passive:false});
+
+cv.addEventListener('touchmove', e => {
+  if(rotDragging && e.touches.length === 1){
+    const t = e.touches[0];
+    const curAng = mouseAngleFromHr(t);
+    let delta = curAng - rotDragStartAng;
+    if(delta >  Math.PI) delta -= 2*Math.PI;
+    if(delta < -Math.PI) delta += 2*Math.PI;
+    tracingAngle = tracingAngleAtDragStart + delta;
+    checkSnap(); updateSlider(); updateSidebar(); redraw();
+    e.preventDefault();
+  }
+}, {passive:false});
+
+cv.addEventListener('touchend', () => { rotDragging = false; });
+
+/* ── State ── */
+let hasSnappedOnce = true; // Step 4: T3 always visible
+
+/* ── Arc slider ── */
+const arcSlider = document.getElementById('arc-slider');
+arcSlider.value = arcRadius;
+document.getElementById('radius-badge').textContent = 'R = ' + arcRadius.toFixed(1);
+
+arcSlider.addEventListener('input', () => {
+  arcRadius = parseFloat(arcSlider.value);
+  document.getElementById('radius-badge').textContent = 'R = ' + arcRadius.toFixed(1);
+  redraw();
+});
+
+/* helper: ray-circle intersect (ray from origin along rAng, circle center C radius R) */
+function rayCircleIntersect(origin, rAng, C, R) {
+  const ux = Math.cos(rAng), uy = Math.sin(rAng);
+  const vx = origin.x - C.x, vy = origin.y - C.y;
+  const b = 2*(vx*ux + vy*uy);
+  const c = vx*vx + vy*vy - R*R;
+  const disc = b*b - 4*c;
+  if(disc < 0) return [];
+  const sq = Math.sqrt(disc);
+  const res = [];
+  const t1 = (-b - sq)/2;
+  const t2 = (-b + sq)/2;
+  if(t1 > 0) res.push({x: origin.x + t1*ux, y: origin.y + t1*uy});
+  if(t2 > 0 && Math.abs(t2-t1) > 1e-6) res.push({x: origin.x + t2*ux, y: origin.y + t2*uy});
+  return res;
+}
+
+function setHcCircle(val){
+  showHcCircle = val;
+  const btn = document.getElementById('btn-hc-circle');
+  btn.style.background = showHcCircle ? 'rgba(16,185,129,.45)' : 'rgba(16,185,129,.12)';
+  btn.style.color = '#fff';
+  redraw();
+}
+function toggleHcCircle(){ setHcCircle(!showHcCircle); }
+
+function setCutMode(m){
+  cutMode = m;
+  document.getElementById('btn-near').style.background = m==='near' ? 'rgba(239,68,68,.85)' : 'transparent';
+  document.getElementById('btn-near').style.color      = m==='near' ? '#fff' : '#ef4444';
+  document.getElementById('btn-far').style.background  = m==='far'  ? 'rgba(239,68,68,.85)' : 'transparent';
+  document.getElementById('btn-far').style.color       = m==='far'  ? '#fff' : '#ef4444';
+  redraw();
+}
+
+/* ── Rotation Slider ── */
+const slider = document.getElementById('rot-slider');
+slider.addEventListener('input', () => {
+  tracingAngle = parseFloat(slider.value) * Math.PI / 180;
+  checkSnap(); updateSidebar(); redraw();
+});
+
+function updateSlider(){
+  let deg = tracingAngle * 180 / Math.PI;
+  while(deg >  180) deg -= 360;
+  while(deg < -180) deg += 360;
+  slider.value = deg;
+}
+
+function checkSnap(){
+  const newSnap = Math.abs(tracingAngle - snapAngle) < SNAP_THRESH;
+  if(newSnap){
+    tracingAngle = snapAngle;  // lock to exact snap
+    hasSnappedOnce = true;
+  }
+  if(newSnap && !wasSnapped) showToast('✓ Aligned! T₂ now matches B₂');
+  wasSnapped = newSnap;
+  isSnapped  = newSnap;
+}
+
+/* ── Buttons ── */
+document.getElementById('btn-snap').addEventListener('click', () => {
+  tracingAngle = snapAngle;
+  isSnapped = wasSnapped = true;
+  hasSnappedOnce = true;
+  updateSlider(); updateSidebar(); redraw();
+  showToast('✓ Snapped! T₂ aligned with B₂');
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  tracingAngle = 0; isSnapped = wasSnapped = false;
+  updateSlider(); updateSidebar(); redraw();
+});
+
+document.getElementById('btn-next').addEventListener('click', () => {
+  if(!lastHc || !lastA1 || !lastB) {
+    showToast('Please generate Hc, A1, and B before proceeding', true);
+    return;
+  }
+  const step4State = {
+    arcRadius, cutMode, showHcCircle, showCongruentTriangle,
+    tracingAngle,
+    X0, X1, Y0, Y1
+  };
+  sessionStorage.setItem('fivepoint_step4_state', JSON.stringify(step4State));
+  sessionStorage.setItem('fivepoint_lastHc', JSON.stringify(lastHc));
+  sessionStorage.setItem('fivepoint_lastA1', JSON.stringify(lastA1));
+  sessionStorage.setItem('fivepoint_lastB', JSON.stringify(lastB));
+  window.location.href = 'step5_animation.html';
+});
+
+document.getElementById('btn-back').addEventListener('click', () => {
+  window.location.href = 'step2_pairs.html';
+});
+
+/* ── Sidebar / label init ── */
+function initLabels(){
+  const p1a = POINT_NAMES[pair1[0]].replace('C','');
+  const p1b = POINT_NAMES[pair1[1]].replace('C','');
+  const p2a = POINT_NAMES[pair2[0]].replace('C','');
+  const p2b = POINT_NAMES[pair2[1]].replace('C','');
+
+  document.getElementById('t1-label').textContent = `T₁: C${p1a}'`;
+  document.getElementById('t2-label').textContent = `T₂: C${p1a}${p1b}'`;
+  document.getElementById('t3-label').textContent = `T₃: C${p2a}' (Forms at Snap)`;
+  document.getElementById('snap-angle-val').textContent =
+    `${(snapAngle * 180 / Math.PI).toFixed(2)}°`;
+}
+
+function updateSidebar(){
+  const deg = (tracingAngle * 180 / Math.PI).toFixed(1);
+  const badge = document.getElementById('angle-badge');
+  badge.textContent = `θ = ${deg}°`;
+  badge.classList.toggle('snapped', isSnapped);
+  slider.classList.toggle('snapped', isSnapped);
+
+  const sc = document.getElementById('snap-card');
+  sc.classList.toggle('aligned', isSnapped);
+
+  const ss = document.getElementById('snap-status');
+  ss.textContent = isSnapped ? '✓ ALIGNED!' : 'Not aligned';
+  ss.classList.toggle('aligned', isSnapped);
+}
+
+/* ── Toast ── */
+let toastTimer = null;
+function showToast(msg, isError=false){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = isError ? 'error show' : 'show';
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+/* ═══════════════════════════════════════════════════════
+   DRAW
+   ═══════════════════════════════════════════════════════ */
+function redraw(){
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0,0,W,H);
+
+  drawGrid();
+  drawAxes();
+
+  /* Static reference bisectors (faded, always visible) */
+  if(B1) drawStaticBisector(B1, PAIR1_CLR, 'B₁');
+  if(B2) drawStaticBisector(B2, PAIR2_CLR, 'B₂');
+
+  /* Faded pair-point connectors */
+  drawFadedLine(pts[pair1[0]], pts[pair1[1]], PAIR1_CLR);
+  drawFadedLine(pts[pair2[0]], pts[pair2[1]], PAIR2_CLR);
+
+  /* Midpoint markers */
+  if(B1) drawMidMark(B1.m, PAIR1_CLR);
+  if(B2) drawMidMark(B2.m, PAIR2_CLR);
+
+  /* Hr pivot */
+  drawHr();
+
+  /* The 3 tracing lines (always on top of statics, below C-points) */
+  drawTracing();
+
+  /* Arc intersections (Step 4 only) */
+  drawArcIntersections();
+
+  /* Congruent triangles (Step 15, button-gated) */
+  drawCongruentTriangles();
+
+  /* C-points */
+  drawCPoints();
+}
+
+/* ── Congruent triangle state ── */
+let lastA1 = null, lastA3 = null, lastHc = null, lastHcR = 0;
+let lastAllA = []; // [{idx, pt}] all found A points
+let lastB = null;  // globally store B
+
+function setCongruentTriangle(val){
+  showCongruentTriangle = val;
+  const btn = document.getElementById('btn-cong');
+  btn.style.background = showCongruentTriangle ? 'rgba(168,85,247,.5)' : 'rgba(168,85,247,.12)';
+  btn.style.color = showCongruentTriangle ? '#fff' : '#a855f7';
+  if(showCongruentTriangle && !showHcCircle){
+    setHcCircle(true);
+  }
+  redraw();
+}
+function toggleCongruentTriangle(){ setCongruentTriangle(!showCongruentTriangle); }
+
+/* global circle-circle intersect */
+function circleCircleIntersect(c1, r1, c2, r2){
+  const dx=c2.x-c1.x, dy=c2.y-c1.y;
+  const d=Math.hypot(dx,dy);
+  if(d>r1+r2||d<Math.abs(r1-r2)||d===0) return [];
+  const a=(r1*r1-r2*r2+d*d)/(2*d);
+  const h=Math.sqrt(Math.max(0,r1*r1-a*a));
+  const p3x=c1.x+a*dx/d, p3y=c1.y+a*dy/d;
+  const res=[{x:p3x+h*dy/d, y:p3y-h*dx/d}];
+  if(h>1e-6) res.push({x:p3x-h*dy/d, y:p3y+h*dx/d});
+  return res;
+}
+
+/* orientation sign: + = CCW, - = CW */
+function signedArea2(a,b,c){
+  return (b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);
+}
+
+/* Find P such that △(C_ref,A_ref,Hr) ≅△(C_i,A_i,P) */
+function congruentPoint(C_ref, A_ref, Hr_, C_i, A_i){
+  const d1=Math.hypot(A_ref.x-Hr_.x, A_ref.y-Hr_.y); // |A_ref–Hr|
+  const d2=Math.hypot(C_ref.x-Hr_.x, C_ref.y-Hr_.y); // |C_ref–Hr|
+  const cands = circleCircleIntersect(A_i, d1, C_i, d2);
+  if(!cands.length) return null;
+  if(cands.length===1) return cands[0];
+  // pick same orientation
+  const refSign = Math.sign(signedArea2(C_ref, A_ref, Hr_));
+  for(const P of cands){
+    if(Math.sign(signedArea2(C_i, A_i, P)) === refSign) return P;
+  }
+  return cands[0];
+}
+
+function drawArcIntersections(){
+  if(!Hr) return;
+  const arcCol = '#ef4444';
+  const hcCol  = '#10b981';
+  const R = arcRadius;
+
+  const Pa  = pts[pair1[0]];
+  const Pc  = pts[pair2[0]];
+  const p1a = POINT_NAMES[pair1[0]].replace('C','');
+  const p2a = POINT_NAMES[pair2[0]].replace('C','');
+
+  const Pa_rot  = rotPt(Pa, tracingAngle);
+  const Pc_paper = rotPt(Pc, -snapAngle);
+  const Pc_rot   = rotPt(Pc_paper, tracingAngle);
+
+  const ang1 = Math.atan2(Pa_rot.y - Hr.y, Pa_rot.x - Hr.x);
+  const ang3 = Math.atan2(Pc_rot.y - Hr.y, Pc_rot.x - Hr.x);
+
+  // Helper to draw faint circle
+  function drawFaintCircle(center, R_logical) {
+    const cp = u2p(center.x, center.y);
+    const pxR_ = (R_logical / (X1-X0)) * gW;
+    ctx.save();
+    ctx.setLineDash([4, 6]); 
+    ctx.strokeStyle = arcCol + '33'; // very low visibility
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cp.px, cp.py, pxR_, 0, Math.PI*2); ctx.stroke();
+    ctx.restore();
+  }
+
+  drawFaintCircle(Pa, R);
+  if (hasSnappedOnce) drawFaintCircle(Pc, R);
+
+  // Pick intersection based on near/far mode
+  function pickPt(candidates) {
+    if(candidates.length === 0) return null;
+    if(candidates.length === 1) return candidates[0];
+    // Sort by distance from Hr
+    const sorted = candidates.slice().sort((a,b) =>
+      Math.hypot(a.x-Hr.x, a.y-Hr.y) - Math.hypot(b.x-Hr.x, b.y-Hr.y)
+    );
+    return cutMode === 'near' ? sorted[0] : sorted[sorted.length-1];
+  }
+
+  const is1 = rayCircleIntersect(Hr, ang1, Pa, R);
+  const A1  = pickPt(is1);
+  const is3 = hasSnappedOnce ? rayCircleIntersect(Hr, ang3, Pc, R) : [];
+  const A3  = pickPt(is3);
+
+  // Store for congruent triangle access
+  lastA1 = A1; lastA3 = A3;
+  lastAllA = [];
+  if(A1) lastAllA.push({idx: pair1[0], pt: A1});
+  if(A3) lastAllA.push({idx: pair2[0], pt: A3});
+  // Pill drawer
+  function drawAPill(txt, px, py, color){
+    ctx.save(); ctx.font='bold 12px Inter,sans-serif';
+    const tw=ctx.measureText(txt).width, padX=7, padY=5;
+    ctx.fillStyle='#060d1a'; ctx.strokeStyle=color; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.roundRect(px-tw/2-padX, py-12-padY, tw+padX*2, 12+padY*2, 5);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#ffffff'; ctx.textAlign='center'; ctx.fillText(txt, px, py-1);
+    ctx.restore();
+  }
+
+  // Draw A1
+  if(A1){
+    const {px,py}=u2p(A1.x,A1.y);
+    ctx.save(); ctx.fillStyle=arcCol; ctx.beginPath(); ctx.arc(px,py,6,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke(); ctx.restore();
+    drawAPill(`A${p1a}`, px, py-20, arcCol);
+  }
+
+  // Draw A3
+  if(A3){
+    const {px,py}=u2p(A3.x,A3.y);
+    ctx.save(); ctx.fillStyle=arcCol; ctx.beginPath(); ctx.arc(px,py,6,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke(); ctx.restore();
+    drawAPill(`A${p2a}`, px, py-20, arcCol);
+  }
+
+  // ── Perpendicular bisector of A1–A3 and Hc ──
+  if(!A1 || !A3) return;
+
+  // Midpoint and direction of A1-A3 segment
+  const mx = (A1.x+A3.x)/2, my = (A1.y+A3.y)/2;
+  const dx = A3.x-A1.x,     dy = A3.y-A1.y;
+  const len = Math.hypot(dx,dy);
+  if(len < 1e-6) return;
+
+  // Perp direction (rotate 90°)
+  const px_ = -dy/len, py_ = dx/len;
+
+  // Draw A1-A3 connector
+  const a1p=u2p(A1.x,A1.y), a3p=u2p(A3.x,A3.y);
+  ctx.save(); ctx.setLineDash([4,4]); ctx.strokeStyle=arcCol+'88'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.moveTo(a1p.px,a1p.py); ctx.lineTo(a3p.px,a3p.py); ctx.stroke(); ctx.restore();
+
+  // Draw perp bisector of A1-A3 as a full infinite line across canvas
+  const ext = 900;
+  const pbS = {x: mx - px_*ext, y: my - py_*ext};
+  const pbE = {x: mx + px_*ext, y: my + py_*ext};
+  const pbs = u2p(pbS.x, pbS.y), pbe = u2p(pbE.x, pbE.y);
+  ctx.save(); ctx.setLineDash([8,5]); ctx.strokeStyle=hcCol+'cc'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(pbs.px,pbs.py); ctx.lineTo(pbe.px,pbe.py); ctx.stroke(); ctx.restore();
+
+  // Find Hc: intersect perp bisector of A1-A3 with the ROTATING T2 tracing line (C15')
+  // T2 is the rotated perpendicular bisector of pair1, passing through Hr
+  function lineSegIntersect(p1, d1, p2, d2) {
+    const cross = d1.x*d2.y - d1.y*d2.x;
+    if(Math.abs(cross) < 1e-9) return null;
+    const dx2 = p2.x-p1.x, dy2 = p2.y-p1.y;
+    const t = (dx2*d2.y - dy2*d2.x) / cross;
+    return {x: p1.x + t*d1.x, y: p1.y + t*d1.y};
+  }
+
+  const perpDir = {x: px_, y: py_};
+
+  // T2: the rotating bisector line = rotated B1.m direction from Hr
+  // This is C15' (or whatever the pair labels are)
+  const B1_m_rot = rotPt(B1.m, tracingAngle);
+  const ang2 = Math.atan2(B1_m_rot.y - Hr.y, B1_m_rot.x - Hr.x);
+  const t2Dir = {x: Math.cos(ang2), y: Math.sin(ang2)};
+
+  // Intersect perp bisector of A1-A3 with T2 line through Hr
+  let Hc = lineSegIntersect({x:mx, y:my}, perpDir, Hr, t2Dir);
+
+  if(Hc) {
+    // T2 is a ray from Hr, not an infinite line in both directions
+    const dot = (Hc.x - Hr.x)*t2Dir.x + (Hc.y - Hr.y)*t2Dir.y;
+    if(dot < -1e-6) Hc = null;
+  }
+
+  if(!Hc) return;
+
+  // Store for congruent triangle access
+  lastHc = Hc;
+
+  // Draw Hc
+  const hcp = u2p(Hc.x, Hc.y);
+  const grd = ctx.createRadialGradient(hcp.px,hcp.py,0,hcp.px,hcp.py,20);
+  grd.addColorStop(0,hcCol+'44'); grd.addColorStop(1,'transparent');
+  ctx.save(); ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(hcp.px,hcp.py,20,0,Math.PI*2); ctx.fill(); ctx.restore();
+  ctx.save(); ctx.fillStyle=hcCol; ctx.beginPath(); ctx.arc(hcp.px,hcp.py,7,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke(); ctx.restore();
+
+  // Hc pill
+  ctx.save(); ctx.font='bold 13px Inter,sans-serif';
+  const lbl = `Hc (${Hc.x.toFixed(1)},${Hc.y.toFixed(1)})`;
+  const tw=ctx.measureText(lbl).width, padX=8, padY=5;
+  ctx.fillStyle='#0a1f0a'; ctx.strokeStyle=hcCol; ctx.lineWidth=1.8;
+  ctx.beginPath(); ctx.roundRect(hcp.px-tw/2-padX, hcp.py-30-padY, tw+padX*2, 14+padY*2, 6);
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#ffffff'; ctx.textAlign='center'; ctx.fillText(lbl, hcp.px, hcp.py-21); ctx.restore();
+
+  // Hc circle through A1 and A3 (only when user toggles it on)
+  if(showHcCircle && A1){
+    const hcR = Math.hypot(A1.x - Hc.x, A1.y - Hc.y);
+    lastHcR = hcR;
+    const hcRpx = (hcR / (X1-X0)) * gW;
+    ctx.save(); ctx.setLineDash([6,5]); ctx.strokeStyle=hcCol+'bb'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(hcp.px, hcp.py, hcRpx, 0, Math.PI*2); ctx.stroke(); ctx.restore();
+
+    // Now compute A2, A4, A5 (the points not in pair 1[0] or pair 2[0])
+    function circleCircleIntersectLocal(c1, r1, c2, r2) {
+      const dx = c2.x - c1.x;
+      const dy = c2.y - c1.y;
+      const d = Math.hypot(dx, dy);
+      if (d > r1 + r2 || d < Math.abs(r1 - r2) || d === 0) return [];
+      const a = (r1 * r1 - r2 * r2 + d * d) / (2 * d);
+      const h = Math.sqrt(Math.max(0, r1 * r1 - a * a));
+      const p3x = c1.x + a * dx / d;
+      const p3y = c1.y + a * dy / d;
+      const res = [];
+      res.push({ x: p3x + h * dy / d, y: p3y - h * dx / d });
+      if (h > 1e-6) {
+        res.push({ x: p3x - h * dy / d, y: p3y + h * dx / d });
+      }
+      return res;
+    }
+
+    pts.forEach((C, i) => {
+      // we already drew A1 and A3, skip them
+      if (i === pair1[0] || i === pair2[0]) return;
+      
+      drawFaintCircle(C, R);
+
+      const candidates = circleCircleIntersectLocal(C, R, Hc, hcR);
+      const A_i = pickPt(candidates);
+      if(A_i) {
+        const {px,py} = u2p(A_i.x, A_i.y);
+        ctx.save(); ctx.fillStyle=arcCol; ctx.beginPath(); ctx.arc(px,py,6,0,Math.PI*2); ctx.fill();
+        ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke(); ctx.restore();
+        const a_name = POINT_NAMES[i].replace('C', 'A');
+        drawAPill(a_name, px, py-20, arcCol);
+      }
+    });
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   CONGRUENT TRIANGLE CONSTRUCTION (Step 15)
+   △(C_ref, A_ref, Hr) ≅ △(C_i, A_i, P_i)
+   c'-lines through each (A_i, P_i) converge at Hc
+   ═══════════════════════════════════════════════ */
+function drawCongruentTriangles(){
+  if(!showCongruentTriangle || !lastA1 || !lastHc) return;
+
+  // ── C1, A1 are the FIXED reference (always pair1[0]) ──────────────────
+  const C1 = pts[pair1[0]];
+  const A1 = lastA1;
+
+  const triCol   = '#f97316'; // solid orange — congruent copy △(C1,A1,Pi)
+  const donorCol = '#06b6d4'; // dashed cyan — donor triangle △(Ci,Ai,Hr)
+  const pDotCol  = '#c084fc'; // purple — primed points Pi
+  const b1Col    = '#fbbf24'; // amber/yellow — B1
+
+  function drawTri(a, b, c, color, dashed){
+    const pa=u2p(a.x,a.y), pb=u2p(b.x,b.y), pc=u2p(c.x,c.y);
+    ctx.save(); ctx.strokeStyle=color;
+    ctx.lineWidth=dashed?1.5:2.2; ctx.setLineDash(dashed?[6,4]:[]);
+    ctx.beginPath(); ctx.moveTo(pa.px,pa.py);
+    ctx.lineTo(pb.px,pb.py); ctx.lineTo(pc.px,pc.py);
+    ctx.closePath(); ctx.stroke(); ctx.restore();
+  }
+
+  function pMark(P, label, color){
+    const {px,py}=u2p(P.x,P.y);
+    ctx.save(); ctx.fillStyle=color;
+    ctx.beginPath(); ctx.arc(px,py,5,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke(); ctx.restore();
+    ctx.save(); ctx.font='bold 11px Inter,sans-serif';
+    const tw=ctx.measureText(label).width;
+    ctx.fillStyle='#0d0020'; ctx.strokeStyle=color; ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.roundRect(px+7,py-10,tw+10,16,4); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#fff'; ctx.textAlign='left'; ctx.fillText(label,px+12,py+1); ctx.restore();
+  }
+
+  /* perpendicular bisector helpers */
+  function pbData(a, b){
+    const dx=b.x-a.x, dy=b.y-a.y, len=Math.hypot(dx,dy);
+    if(len<1e-9) return null;
+    return { mid:{x:(a.x+b.x)/2, y:(a.y+b.y)/2}, dir:{x:-dy/len, y:dx/len} };
+  }
+  function drawPB(pb, color){
+    const ext=900, {mid,dir}=pb;
+    const s=u2p(mid.x-dir.x*ext, mid.y-dir.y*ext);
+    const e=u2p(mid.x+dir.x*ext, mid.y+dir.y*ext);
+    ctx.save(); ctx.setLineDash([8,5]); ctx.strokeStyle=color; ctx.lineWidth=1.8;
+    ctx.beginPath(); ctx.moveTo(s.px,s.py); ctx.lineTo(e.px,e.py); ctx.stroke(); ctx.restore();
+  }
+
+  // ── Build Ai map for every point except C1 ─────────────────────────────
+  const aiMap = new Map(); // index → A_point
+
+  // pair2 anchor (A3) from lastAllA
+  lastAllA.forEach(({idx, pt}) => {
+    if(idx === pair1[0]) return; // C1 is the reference, skip
+    aiMap.set(idx, pt);
+  });
+
+  // All remaining points from Hc circle (pair1[1], pair2[1], standalone)
+  if(showHcCircle && lastHcR > 0){
+    pts.forEach((_, i) => {
+      if(i === pair1[0]) return;   // skip C1 (reference)
+      if(aiMap.has(i)) return;     // already have A from tracing
+      const cands = circleCircleIntersect(pts[i], arcRadius, lastHc, lastHcR);
+      if(!cands.length) return;
+      const sorted = cands.slice().sort((a,b)=>
+        Math.hypot(a.x-Hr.x,a.y-Hr.y)-Math.hypot(b.x-Hr.x,b.y-Hr.y));
+      aiMap.set(i, cutMode==='near' ? sorted[0] : sorted[sorted.length-1]);
+    });
+  }
+
+  // ── Draw the shared C1–A1 base edge prominently ────────────────────────
+  const c1p=u2p(C1.x,C1.y), a1p=u2p(A1.x,A1.y);
+  ctx.save(); ctx.strokeStyle=triCol; ctx.lineWidth=3; ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(c1p.px,c1p.py); ctx.lineTo(a1p.px,a1p.py); ctx.stroke(); ctx.restore();
+
+  let pPoints = [];
+
+  // ── For each Ci ≠ C1: find Pi, draw △(C1,A1,Pi) and △(Ci,Ai,Hr) ──────
+  aiMap.forEach((A_i, idx) => {
+    // For the other point in Pair 1, Pi is exactly Hr, so skip drawing redundant congruent triangle
+    if(idx === pair1[1]) return;
+
+    // For the other point in Pair 2, we don't need its Pi either, one is enough to find B
+    if(idx === pair2[1]) return;
+
+    const C_i = pts[idx];
+
+    // Pi = congruentPoint(C_ref=Ci, A_ref=Ai, Hr_=Hr, C_i=C1, A_i=A1)
+    // → finds P where d(C1,P)=d(Ci,Hr) and d(A1,P)=d(Ai,Hr), same orientation
+    const P_i = congruentPoint(C_i, A_i, Hr, C1, A1);
+    if(!P_i) return;
+
+    pPoints.push(P_i);
+
+    // Donor triangle △(Ci, Ai, Hr) — dashed cyan
+    drawTri(C_i, A_i, Hr, donorCol, true);
+
+    // Congruent copy △(C1, A1, Pi) — solid orange
+    drawTri(C1, A1, P_i, triCol, false);
+
+    // Label Pi as e.g. "P2", "P3", "P4", "P5"
+    const num = POINT_NAMES[idx].replace('C','');
+    pMark(P_i, 'P'+num, pDotCol);
+  });
+
+  // ── Find and Highlight B ────────────────────────────────────────────────
+  if (pPoints.length === 2 && Hr) {
+    let nearP = pPoints[0], farP = pPoints[1];
+    if (Math.hypot(pPoints[1].x-Hr.x, pPoints[1].y-Hr.y) < Math.hypot(pPoints[0].x-Hr.x, pPoints[0].y-Hr.y)) {
+      nearP = pPoints[1];
+      farP = pPoints[0];
+    }
+    
+    const b1 = perpBisector(pPoints[0], pPoints[1]);
+    const b2 = perpBisector(Hr, nearP);
+    
+    if (b1 && b2) {
+      const B = lineIntersect(b1, b2);
+      if (B) {
+        lastB = {x: B.x, y: B.y};
+        // Draw dotted lines connecting the points to show exactly what is being bisected
+        const pt1p = u2p(pPoints[0].x, pPoints[0].y);
+        const pt2p = u2p(pPoints[1].x, pPoints[1].y);
+        const hrp = u2p(Hr.x, Hr.y);
+        const nearPp = u2p(nearP.x, nearP.y);
+
+        ctx.save();
+        ctx.setLineDash([4, 4]); // Distinct dotted segment
+        ctx.strokeStyle = '#94a3b8'; // Muted reference color
+        ctx.lineWidth = 1.5;
+        
+        // Connect P_a and P_b
+        ctx.beginPath(); ctx.moveTo(pt1p.px, pt1p.py); ctx.lineTo(pt2p.px, pt2p.py); ctx.stroke();
+        
+        // Connect Hr and nearP
+        ctx.beginPath(); ctx.moveTo(hrp.px, hrp.py); ctx.lineTo(nearPp.px, nearPp.py); ctx.stroke();
+        ctx.restore();
+
+        // Draw the perpendicular bisectors
+        const pbd1 = pbData(pPoints[0], pPoints[1]);
+        const pbd2 = pbData(Hr, nearP);
+        if(pbd1) drawPB(pbd1, '#3b82f6'); // blue
+        if(pbd2) drawPB(pbd2, '#3b82f6');
+
+        // Highlight B point prominently
+        const bp = u2p(B.x, B.y);
+        ctx.save();
+        
+        // Aura
+        const grd = ctx.createRadialGradient(bp.px,bp.py,0, bp.px,bp.py,20);
+        grd.addColorStop(0, '#ef444466');
+        grd.addColorStop(1, 'transparent');
+        ctx.fillStyle = grd;
+        ctx.beginPath(); ctx.arc(bp.px, bp.py, 20, 0, Math.PI*2); ctx.fill();
+
+        // Main dot
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath(); ctx.arc(bp.px, bp.py, 7, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.stroke();
+        
+        // Label B
+        ctx.font = 'bold 18px Inter,sans-serif';
+        ctx.fillStyle = '#ef4444';
+        ctx.textAlign = 'center';
+        ctx.fillText('B', bp.px, bp.py - 14);
+
+        // B Coordinates Pill
+        const coord = `B(${B.x.toFixed(1)}, ${B.y.toFixed(1)})`;
+        ctx.font = 'bold 11px JetBrains Mono,monospace';
+        const tw = ctx.measureText(coord).width;
+        ctx.fillStyle = '#060d1a';
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(bp.px - tw/2 - 8, bp.py + 12, tw + 16, 20, 5);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(coord, bp.px, bp.py + 26);
+        
+        ctx.restore();
+      }
+    }
+  }
+}
+
+/* ── Grid ── */
+function drawGrid(){
+  const step = pickStep();
+  ctx.strokeStyle = '#e8edf5'; ctx.lineWidth = 0.7;
+  const xS = Math.ceil(X0/step)*step, yS = Math.ceil(Y0/step)*step;
+  for(let x=xS; x<=X1+step; x+=step){
+    if(Math.abs(x)<1e-6) continue;
+    const{px}=u2p(x,0);
+    ctx.beginPath(); ctx.moveTo(px,mg.t); ctx.lineTo(px,mg.t+gH); ctx.stroke();
+  }
+  for(let y=yS; y<=Y1+step; y+=step){
+    if(Math.abs(y)<1e-6) continue;
+    const{py}=u2p(0,y);
+    ctx.beginPath(); ctx.moveTo(mg.l,py); ctx.lineTo(mg.l+gW,py); ctx.stroke();
+  }
+}
+
+function pickStep(){
+  const r=X1-X0; return r>400?50:r>200?20:10;
+}
+
+/* ── Axes ── */
+function drawAxes(){
+  const O = u2p(0,0);
+  ctx.strokeStyle='#b0bec8'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(mg.l,O.py); ctx.lineTo(mg.l+gW,O.py); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(O.px,mg.t); ctx.lineTo(O.px,mg.t+gH); ctx.stroke();
+  const a=8;
+  ctx.fillStyle='#b0bec8';
+  ctx.beginPath(); ctx.moveTo(mg.l+gW,O.py); ctx.lineTo(mg.l+gW-a,O.py-a/2); ctx.lineTo(mg.l+gW-a,O.py+a/2); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(O.px,mg.t); ctx.lineTo(O.px-a/2,mg.t+a); ctx.lineTo(O.px+a/2,mg.t+a); ctx.closePath(); ctx.fill();
+  ctx.font='bold 12px Inter,sans-serif'; ctx.fillStyle='#64748b';
+  ctx.fillText('X',mg.l+gW-6,O.py-12);
+  ctx.fillText('Y',O.px+10,mg.t+12);
+  ctx.fillText('O',O.px-18,O.py+14);
+  const step=pickStep();
+  const xS=Math.ceil(X0/step)*step, yS=Math.ceil(Y0/step)*step;
+  ctx.font='10px JetBrains Mono,monospace'; ctx.fillStyle='#94a3b8';
+  ctx.textAlign='center';
+  for(let x=xS; x<=X1+step; x+=step){
+    if(!x) continue;
+    const{px}=u2p(x,0);
+    ctx.fillText(x,px,O.py+16);
+    ctx.strokeStyle='#c8d3de'; ctx.lineWidth=0.8;
+    ctx.beginPath();ctx.moveTo(px,O.py-3);ctx.lineTo(px,O.py+3);ctx.stroke();
+  }
+  ctx.textAlign='right';
+  for(let y=yS; y<=Y1+step; y+=step){
+    if(!y) continue;
+    const{py}=u2p(0,y);
+    ctx.fillText(y,O.px-6,py+4);
+    ctx.strokeStyle='#c8d3de'; ctx.lineWidth=0.8;
+    ctx.beginPath();ctx.moveTo(O.px-3,py);ctx.lineTo(O.px+3,py);ctx.stroke();
+  }
+  ctx.textAlign='left';
+}
+
+/* ── Static bisector (faded reference) ── */
+function drawStaticBisector(b, color, label){
+  ctx.save();
+  ctx.beginPath();
+  if (Hr) {
+    const logAng = Math.atan2(b.m.y - Hr.y, b.m.x - Hr.x);
+    const ray_ex = Hr.x + Math.cos(logAng)*1200;
+    const ray_ey = Hr.y + Math.sin(logAng)*1200;
+    const s = u2p(Hr.x, Hr.y);
+    const e = u2p(ray_ex, ray_ey);
+    ctx.moveTo(s.px, s.py); ctx.lineTo(e.px, e.py);
+  } else {
+    const s = u2p(b.s.x, b.s.y);
+    const e = u2p(b.e.x, b.e.y);
+    ctx.moveTo(s.px, s.py); ctx.lineTo(e.px, e.py);
+  }
+  ctx.setLineDash([10,7]);
+  ctx.strokeStyle = color+'55';
+  ctx.lineWidth   = 1.8;
+  ctx.stroke();
+  ctx.restore();
+  /* label near midpoint, offset slightly */
+  const{px:mx,py:my}=u2p(b.m.x,b.m.y);
+  ctx.save();
+  ctx.font='bold 11px Inter,sans-serif';
+  ctx.fillStyle=color+'cc';
+  ctx.textAlign='left';
+  ctx.fillText(label, mx+10, my-10);
+  ctx.restore();
+}
+
+/* ── Faded pair connector ── */
+function drawFadedLine(p1, p2, color){
+  const a=u2p(p1.x,p1.y), b=u2p(p2.x,p2.y);
+  ctx.save();
+  ctx.setLineDash([5,5]);
+  ctx.strokeStyle=color+'30'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(a.px,a.py); ctx.lineTo(b.px,b.py); ctx.stroke();
+  ctx.restore();
+}
+
+/* ── Midpoint cross ── */
+function drawMidMark(m, color){
+  const{px,py}=u2p(m.x,m.y);
+  ctx.save();
+  ctx.strokeStyle=color+'88'; ctx.lineWidth=1.5;
+  const s2=6;
+  ctx.beginPath(); ctx.moveTo(px-s2,py); ctx.lineTo(px+s2,py); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(px,py-s2); ctx.lineTo(px,py+s2); ctx.stroke();
+  ctx.restore();
+}
+
+/* ── Hr pivot ── */
+function drawHr(){
+  const{px,py}=u2p(Hr.x,Hr.y);
+  /* glow aura */
+  const grd=ctx.createRadialGradient(px,py,0,px,py,22);
+  grd.addColorStop(0,HR_CLR+'30'); grd.addColorStop(1,'transparent');
+  ctx.save(); ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(px,py,22,0,Math.PI*2); ctx.fill(); ctx.restore();
+  /* cross-hairs */
+  ctx.save(); ctx.strokeStyle=HR_CLR+'55'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(px-38,py); ctx.lineTo(px+38,py); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(px,py-38); ctx.lineTo(px,py+38); ctx.stroke();
+  ctx.setLineDash([]); ctx.restore();
+  /* outer ring */
+  ctx.save(); ctx.fillStyle='#0f172a';
+  ctx.beginPath(); ctx.arc(px,py,14,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle=HR_CLR; ctx.lineWidth=2.5;
+  ctx.beginPath(); ctx.arc(px,py,14,0,Math.PI*2); ctx.stroke(); ctx.restore();
+  /* ground pin */
+  ctx.save(); ctx.strokeStyle=HR_CLR; ctx.lineWidth=1.5;
+  for(let i=-10;i<=10;i+=5){
+    ctx.beginPath(); ctx.moveTo(px+i,py+14); ctx.lineTo(px+i-3,py+21); ctx.stroke();
+  }
+  ctx.beginPath(); ctx.moveTo(px-12,py+14); ctx.lineTo(px+12,py+14); ctx.stroke();
+  ctx.restore();
+  /* inner dot */
+  ctx.save(); ctx.fillStyle=HR_CLR;
+  ctx.beginPath(); ctx.arc(px,py,5,0,Math.PI*2); ctx.fill(); ctx.restore();
+  /* label pill */
+  const lbl=`Hr (${Hr.x.toFixed(1)}, ${Hr.y.toFixed(1)})`;
+  ctx.font='bold 12px Inter,sans-serif';
+  const tw=ctx.measureText(lbl).width; const pw=tw+16,ph=20;
+  ctx.save(); ctx.fillStyle=HR_CLR+'22'; ctx.strokeStyle=HR_CLR+'88'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.roundRect(px-pw/2,py-44,pw,ph,5); ctx.fill(); ctx.stroke();
+  ctx.fillStyle=HR_CLR; ctx.textAlign='center'; ctx.fillText(lbl,px,py-29); ctx.restore();
+}
+
+/* ── THE TRACING LINES ── */
+function drawTracing(){
+  if(!Hr) return;
+
+  const col  = isSnapped ? SNAP_CLR : TRACE_CLR;
+  const glow = isSnapped ? SNAP_CLR + '55' : TRACE_CLR + '44';
+  const{px:hx, py:hy} = hrPixel();
+  const ext = 1200;
+
+  const p1a = POINT_NAMES[pair1[0]].replace('C','');
+  const p1b = POINT_NAMES[pair1[1]].replace('C','');
+  const p2a = POINT_NAMES[pair2[0]].replace('C','');
+
+  /* Draw dark label pills inline helper */
+  function drawPill(txt, px, py, color, bAlpha){
+    ctx.save();
+    ctx.font = 'bold 12px Inter, sans-serif';
+    const tw = ctx.measureText(txt).width;
+    const padX=7, padY=5;
+    ctx.fillStyle = '#060d1a'; // Very dark background
+    ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+    if(bAlpha !== undefined) ctx.globalAlpha = bAlpha;
+    ctx.beginPath(); ctx.roundRect(px - tw/2 - padX, py - 12 - padY, tw + padX*2, 12 + padY*2, 5);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#ffffff'; // Bright text
+    ctx.textAlign = 'center'; ctx.fillText(txt, px, py - 1);
+    ctx.restore();
+  }
+
+  // 1) T1: C1' tracking line 
+  const Pa = pts[pair1[0]];
+  const Pa_rot = rotPt(Pa, tracingAngle);
+  const t1LogAng = Math.atan2(Pa_rot.y - Hr.y, Pa_rot.x - Hr.x);
+  const t1_ex = Hr.x + Math.cos(t1LogAng)*ext, t1_ey = Hr.y + Math.sin(t1LogAng)*ext;
+  const {px:t1Px, py:t1Py} = u2p(t1_ex, t1_ey);
+  const {px:paPx, py:paPy} = u2p(Pa_rot.x, Pa_rot.y);
+
+  ctx.save();
+  ctx.setLineDash([4,5]); ctx.strokeStyle=col; ctx.lineWidth=isSnapped?2.5:2;
+  ctx.shadowColor=glow; ctx.shadowBlur=isSnapped?12:7;
+  ctx.beginPath(); ctx.moveTo(hx,hy); ctx.lineTo(t1Px,t1Py); ctx.stroke();
+  ctx.restore();
+  
+  // Outer glow ring & dot for Pa_rot
+  ctx.save();
+  ctx.strokeStyle=col+'55'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(paPx,paPy,11,0,Math.PI*2); ctx.stroke();
+  ctx.fillStyle=col; ctx.beginPath(); ctx.arc(paPx,paPy,5,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  const t1CanvasAng = Math.atan2(paPy-hy, paPx-hx);
+  drawPill(`C${p1a}'`, (paPx+hx)/2 - Math.sin(t1CanvasAng)*22, (paPy+hy)/2 + Math.cos(t1CanvasAng)*22, col, isSnapped?0.9:0.8);
+
+  // 2) T2: C15' (Rotated Bisector of Pair 1) originating from Hr
+  const B1_m_rot = rotPt(B1.m, tracingAngle);
+  const t2LogAng = Math.atan2(B1_m_rot.y - Hr.y, B1_m_rot.x - Hr.x);
+  const t2_ex = Hr.x + Math.cos(t2LogAng)*ext, t2_ey = Hr.y + Math.sin(t2LogAng)*ext;
+  const {px:t2Px, py:t2Py} = u2p(t2_ex, t2_ey);
+
+  ctx.save();
+  ctx.setLineDash([4,5]); ctx.strokeStyle=col; ctx.lineWidth=isSnapped?2.5:2;
+  ctx.shadowColor=glow; ctx.shadowBlur=isSnapped?12:7;
+  ctx.beginPath(); ctx.moveTo(hx,hy); ctx.lineTo(t2Px,t2Py); ctx.stroke();
+  ctx.restore();
+
+  const t2CanvasAng = Math.atan2(t2Py-hy, t2Px-hx);
+  drawPill(`C${p1a}${p1b}'`, hx + 100*Math.cos(t2CanvasAng), hy + 100*Math.sin(t2CanvasAng) - 15, col, isSnapped?0.9:0.8);
+
+  // 3) T3: C3' tracking line (Visible permanently once formed at snap)
+  if(hasSnappedOnce) {
+    const Pc = pts[pair2[0]];
+    const Pc_paper = rotPt(Pc, -snapAngle); 
+    const Pc_rot = rotPt(Pc_paper, tracingAngle);
+
+    const t3LogAng = Math.atan2(Pc_rot.y - Hr.y, Pc_rot.x - Hr.x);
+    const t3_ex = Hr.x + Math.cos(t3LogAng)*ext, t3_ey = Hr.y + Math.sin(t3LogAng)*ext;
+    const {px:t3Px, py:t3Py} = u2p(t3_ex, t3_ey);
+    const {px:pcPx, py:pcPy} = u2p(Pc_rot.x, Pc_rot.y);
+
+    ctx.save();
+    ctx.setLineDash([4,5]); ctx.strokeStyle=col; ctx.lineWidth=isSnapped?2.5:2;
+    ctx.shadowColor=glow; ctx.shadowBlur=isSnapped?12:7;
+    ctx.beginPath(); ctx.moveTo(hx,hy); ctx.lineTo(t3Px,t3Py); ctx.stroke();
+    ctx.restore();
+
+    // Outer glow ring & dot for Pc targeted
+    ctx.save();
+    ctx.strokeStyle=col+'55'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(pcPx,pcPy,11,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle=col; ctx.beginPath(); ctx.arc(pcPx,pcPy,5,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    const t3CanvasAng = Math.atan2(pcPy-hy, pcPx-hx);
+    drawPill(`C${p2a}'`, (pcPx+hx)/2 - Math.sin(t3CanvasAng)*22, (pcPy+hy)/2 + Math.cos(t3CanvasAng)*22, col, isSnapped?1:0.8);
+  }
+}
+
+function drawTracingEndpoint(pt, label, col){
+  const{px,py}=u2p(pt.x,pt.y);
+  /* outer glow ring */
+  ctx.save();
+  ctx.strokeStyle=col+'55'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(px,py,11,0,Math.PI*2); ctx.stroke();
+  /* dot */
+  ctx.fillStyle=col;
+  ctx.beginPath(); ctx.arc(px,py,5,0,Math.PI*2); ctx.fill();
+  /* label */
+  ctx.font='bold 11px Inter,sans-serif'; ctx.fillStyle=col;
+  ctx.textAlign='left';
+  ctx.fillText(label, px+13, py-5);
+  /* coord */
+  ctx.font='9px JetBrains Mono,monospace'; ctx.fillStyle=col+'bb';
+  ctx.fillText(`(${pt.x.toFixed(1)}, ${pt.y.toFixed(1)})`, px+13, py+8);
+  ctx.restore();
+}
+
+/* ── C-points ── */
+function drawCPoints(){
+  pts.forEach((p,i) => {
+    const{px,py}=u2p(p.x,p.y);
+    const color=POINT_COLORS[i], name=POINT_NAMES[i];
+    const inP1=pair1.includes(i), inP2=pair2.includes(i);
+
+    /* Pair highlight ring */
+    if(inP1){
+      ctx.save(); ctx.strokeStyle=PAIR1_CLR; ctx.lineWidth=2.5;
+      ctx.setLineDash([4,3]);
+      ctx.beginPath(); ctx.arc(px,py,18,0,Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]); ctx.restore();
+    }
+    if(inP2){
+      ctx.save(); ctx.strokeStyle=PAIR2_CLR; ctx.lineWidth=2.5;
+      ctx.setLineDash([4,3]);
+      ctx.beginPath(); ctx.arc(px,py,18,0,Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]); ctx.restore();
+    }
+
+    /* Main dot */
+    ctx.save();
+    ctx.beginPath(); ctx.arc(px,py,11,0,Math.PI*2);
+    ctx.fillStyle=color+'cc'; ctx.fill();
+    ctx.strokeStyle=color; ctx.lineWidth=2.5; ctx.stroke();
+    ctx.restore();
+
+    /* Inner white */
+    ctx.save(); ctx.fillStyle='#fff';
+    ctx.beginPath(); ctx.arc(px,py,4,0,Math.PI*2); ctx.fill(); ctx.restore();
+
+    /* Name */
+    ctx.save(); ctx.font='bold 13px Inter,sans-serif';
+    ctx.fillStyle=color; ctx.textAlign='center';
+    ctx.fillText(name, px, py-19); ctx.restore();
+
+    /* Coord pill */
+    const coord=`(${p.x.toFixed(1)},${p.y.toFixed(1)})`;
+    ctx.font='10px JetBrains Mono,monospace';
+    const tw=ctx.measureText(coord).width, pw=tw+14, ph=15;
+    const pillY=py+16;
+    ctx.save(); ctx.fillStyle=color+'22'; ctx.strokeStyle=color+'55'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.roundRect(px-pw/2,pillY,pw,ph,4); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=color; ctx.textAlign='center'; ctx.fillText(coord,px,pillY+11); ctx.restore();
+
+    /* Pair badge below pill */
+    if(inP1){
+      ctx.save(); ctx.font='bold 9px Inter,sans-serif';
+      ctx.fillStyle=PAIR1_CLR; ctx.textAlign='center';
+      ctx.fillText('P1', px, pillY+ph+10); ctx.restore();
+    }
+    if(inP2){
+      ctx.save(); ctx.font='bold 9px Inter,sans-serif';
+      ctx.fillStyle=PAIR2_CLR; ctx.textAlign='center';
+      ctx.fillText('P2', px, pillY+ph+(inP1?20:10)); ctx.restore();
+    }
+  });
+}
+
+/* ── Init ── */
+initLabels();
+setCutMode(cutMode);
+setHcCircle(showHcCircle);
+setCongruentTriangle(showCongruentTriangle);
+
+// Apply restored tracing angle BEFORE resize/redraw
+if(_restoredTracingAngle !== null) {
+  tracingAngle = _restoredTracingAngle;
+  checkSnap();   // re-detect if snapped
+}
+updateSlider();  // sync slider to angle
+updateSidebar(); // sync sidebar badges
+resize();        // fit canvas (preserves zoom+pan from saved X0/X1/Y0/Y1)
+</script>
+
+<!-- ═══════════════════════ GUIDE ═══════════════════════ -->
+<style>
+#guide-fab{position:fixed;top:16px;right:16px;z-index:9999;width:44px;height:44px;border-radius:50%;border:2px solid rgba(99,179,237,.5);background:linear-gradient(135deg,#1e3a5f,#0f2744);box-shadow:0 4px 20px rgba(0,0,0,.45);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .3s;animation:fab-pulse 3s ease-in-out infinite;}
+#guide-fab:hover{transform:scale(1.12);box-shadow:0 6px 28px rgba(0,0,0,.5),0 0 0 6px rgba(99,179,237,.18);}
+@keyframes fab-pulse{0%,100%{box-shadow:0 4px 20px rgba(0,0,0,.45),0 0 0 0 rgba(99,179,237,.3)}50%{box-shadow:0 4px 20px rgba(0,0,0,.45),0 0 0 7px rgba(99,179,237,.08)}}
+#guide-overlay{position:fixed;inset:0;z-index:10000;background:rgba(4,10,22,.8);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:20px;}
+#guide-overlay.open{display:flex;}
+#guide-modal{width:min(700px,100%);max-height:92vh;overflow-y:auto;background:linear-gradient(160deg,#0b1c35,#071426);border:1.5px solid #1e3a5e;border-radius:22px;padding:32px 30px 28px;box-shadow:0 30px 80px rgba(0,0,0,.7);position:relative;animation:modal-in .35s cubic-bezier(.34,1.3,.64,1);}
+@keyframes modal-in{from{transform:translateY(22px) scale(.96);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+#guide-modal::-webkit-scrollbar{width:5px}#guide-modal::-webkit-scrollbar-thumb{background:#1e3a5e;border-radius:3px}
+#guide-close{position:absolute;top:16px;right:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:50%;width:32px;height:32px;color:#94a3b8;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,color .2s;font-family:sans-serif;}
+#guide-close:hover{background:rgba(239,68,68,.25);color:#fca5a5;}
+.gd-header{text-align:center;margin-bottom:28px;}
+.gd-pill{display:inline-flex;align-items:center;gap:7px;background:rgba(99,179,237,.1);border:1px solid rgba(99,179,237,.25);border-radius:30px;padding:5px 16px;font-size:.7rem;font-weight:700;letter-spacing:.08em;color:#63b3ed;margin-bottom:12px;}
+.gd-title{font-size:1.35rem;font-weight:800;background:linear-gradient(135deg,#63b3ed,#a78bfa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;}
+.gd-sub{font-size:.77rem;color:#64748b;}
+.gd-steps{display:flex;flex-direction:column;gap:12px;}
+.gd-card{display:flex;gap:14px;align-items:flex-start;background:rgba(255,255,255,.03);border:1.5px solid rgba(255,255,255,.06);border-radius:16px;padding:16px 18px;position:relative;overflow:hidden;}
+.gd-card.gd-current{border-color:rgba(99,179,237,.5);background:rgba(99,179,237,.07);}
+.gd-card.gd-done{border-color:rgba(52,211,153,.22)!important;background:rgba(52,211,153,.04)!important;}
+.gd-current-badge{position:absolute;top:12px;right:14px;background:rgba(99,179,237,.25);color:#63b3ed;font-size:.6rem;font-weight:700;letter-spacing:.06em;padding:2px 9px;border-radius:20px;border:1px solid rgba(99,179,237,.4);font-family:'Inter',sans-serif;}
+.gd-icon{width:46px;height:46px;min-width:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.08);}
+.gd-info{flex:1;min-width:0;}
+.gd-step-num{font-size:.62rem;font-weight:700;letter-spacing:.07em;color:#64748b;margin-bottom:3px;font-family:'Inter',sans-serif;}
+.gd-step-title{font-size:.95rem;font-weight:700;color:#e2eaf6;margin-bottom:6px;font-family:'Inter',sans-serif;}
+.gd-bullets{list-style:none;display:flex;flex-direction:column;gap:5px;}
+.gd-bullets li{font-size:.73rem;color:#94a3b8;padding-left:16px;position:relative;line-height:1.5;font-family:'Inter',sans-serif;}
+.gd-bullets li::before{content:'→';position:absolute;left:0;font-size:.65rem;}
+.gd-tip{font-size:.68rem;color:#4a6080;background:rgba(99,179,237,.06);border:1px solid rgba(99,179,237,.12);border-radius:8px;padding:6px 10px;margin-top:8px;font-family:'Inter',sans-serif;}
+.gd-footer{margin-top:22px;text-align:center;font-size:.68rem;color:#3a5070;font-family:'Inter',sans-serif;}
+</style>
+<button id="guide-fab" onclick="document.getElementById('guide-overlay').classList.add('open')" title="Step 4 — How to use this page">
+  <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9.5" stroke="#63b3ed" stroke-width="1.5"/><text x="11" y="16" text-anchor="middle" font-family="Inter,sans-serif" font-weight="800" font-size="13" fill="#63b3ed">?</text></svg>
+</button>
+<div id="guide-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+<div id="guide-modal">
+  <button id="guide-close" onclick="document.getElementById('guide-overlay').classList.remove('open')">&#x2715;</button>
+  <div class="gd-header">
+    <div class="gd-pill"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="currentColor"/></svg>HOW IT WORKS</div>
+    <div class="gd-title">4-Bar Linkage &#8212; Step by Step</div>
+    <div class="gd-sub">Read each step below and follow along. Even a kid can do it! &#x1F680;</div>
+  </div>
+  <div class="gd-steps">
+    <div class="gd-card" id="gd-s1">
+      <div class="gd-icon" style="background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.25)">&#x1F3AF;</div>
+      <div class="gd-info">
+        <div class="gd-step-num">STEP 1</div>
+        <div class="gd-step-title">Drop 5 Target Dots on the Canvas</div>
+        <ul class="gd-bullets">
+          <li>Think of 5 places a robot arm should touch &#8212; those are your targets</li>
+          <li>Click anywhere on the <strong>white drawing area</strong> to drop a colored dot</li>
+          <li>Drop them one by one &#8212; they will be named <strong>C1, C2, C3, C4, C5</strong> automatically</li>
+          <li>Made a mistake? Click and drag any dot to move it to a new position</li>
+          <li>Keep dots spread apart &#8212; they must not sit on top of each other!</li>
+          <li>Once all 5 dots are placed, press <strong style="color:#63b3ed">Proceed to Step 2 &#8594;</strong> in the sidebar</li>
+        </ul>
+        <div class="gd-tip">&#x1F5B1;&#xFE0F; <strong>Move the view:</strong> Right-click + drag OR hold Shift + drag to pan left/right/up/down &nbsp;|&nbsp; Scroll wheel to zoom in or out</div>
+      </div>
+    </div>
+    <div class="gd-card" id="gd-s2">
+      <div class="gd-icon" style="background:rgba(6,182,212,.1);border-color:rgba(6,182,212,.25)">&#x1F535;</div>
+      <div class="gd-info">
+        <div class="gd-step-num">STEP 2</div>
+        <div class="gd-step-title">Pick 2 Pairs of Dots to Find the Rocking Hinge (Hr)</div>
+        <ul class="gd-bullets">
+          <li>Click any 2 of your 5 dots &#8212; a <strong style="color:#06b6d4">blue line</strong> will appear exactly in the middle between them</li>
+          <li>Now click 2 more different dots &#8212; an <strong style="color:#f97316">orange line</strong> appears in the middle of those two</li>
+          <li>Where the blue and orange lines cross is the special point <strong style="color:#10b981">Hr</strong></li>
+          <li><strong>Hr</strong> is the fixed hinge on the ground where the rocking arm is attached</li>
+          <li>Once both pairs are picked and Hr appears, press <strong style="color:#63b3ed">Proceed to Step 3 &#8594;</strong></li>
+          <li>Picked the wrong dot? Press <strong>Undo Last Selection</strong> to go back one step</li>
+        </ul>
+        <div class="gd-tip">&#x1F5B1;&#xFE0F; <strong>Move the view:</strong> Right-click + drag OR hold Shift + drag to pan &nbsp;|&nbsp; Scroll wheel to zoom</div>
+      </div>
+    </div>
+    <div class="gd-card" id="gd-s3">
+      <div class="gd-icon" style="background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.25)">&#x1F300;</div>
+      <div class="gd-info">
+        <div class="gd-step-num">STEP 3</div>
+        <div class="gd-step-title">Spin the 3 Glowing Lines Until They Line Up</div>
+        <ul class="gd-bullets">
+          <li>You will now see 3 glowing lines joined like a fan, spinning around <strong>Hr</strong></li>
+          <li><strong>Left-click + drag</strong> the drawing area left or right to spin the fan</li>
+          <li>Use the <strong>angle slider</strong> in the sidebar for tiny fine-tune movements</li>
+          <li>Your goal: spin until the <strong style="color:#fbbf24">yellow line in the middle (T&#x2082;)</strong> exactly covers the <strong style="color:#f97316">orange dashed line (B&#x2082;)</strong></li>
+          <li>When they match, the badge turns purple &#8212; or press <strong>Snap to Align</strong> to jump there in one click</li>
+          <li>Once lined up, press <strong style="color:#63b3ed">Proceed to Step 4 &#8594;</strong></li>
+        </ul>
+        <div class="gd-tip">&#x1F5B1;&#xFE0F; <strong>Move the view:</strong> Right-click + drag OR hold Shift + drag to pan &nbsp;|&nbsp; Scroll wheel to zoom</div>
+      </div>
+    </div>
+    <div class="gd-card" id="gd-s4">
+      <div class="gd-icon" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.25)">&#x2699;&#xFE0F;</div>
+      <div class="gd-info">
+        <div class="gd-step-num">STEP 4</div>
+        <div class="gd-step-title">Grow Circles to Find the Spinning Hinge (Hc) and End Point B</div>
+        <ul class="gd-bullets">
+          <li>Drag the <strong style="color:#ef4444">R slider</strong> on the left to make circles grow or shrink around your dots</li>
+          <li>When the circle from the <strong>first dot from Pair 1</strong> touches a glowing tracing line, a small crossing dot appears &#8212; that is <strong style="color:#ef4444">the first cut point</strong></li>
+          <li>The same circle size from the <strong>first dot from Pair 2</strong> gives you <strong style="color:#ef4444">the second cut point</strong></li>
+          <li>A line drawn through the middle of those two cut points will hit the tracing line at <strong style="color:#10b981">Hc</strong> &#8212; the spinning hinge!</li>
+          <li>Press <strong>Draw Hc Circle</strong> &#8212; you will see a large circle that the spinning arm follows</li>
+          <li>Press <strong>Congruent &#x25B3;</strong> &#8212; this draws helper triangles to find point <strong style="color:#3b82f6">B</strong> (the tip of the rocking arm)</li>
+          <li>Use <strong>Near Cut / Far Cut</strong> buttons to choose which crossing dot to use when two appear on the line</li>
+          <li>When <strong style="color:#10b981">Hc</strong> and <strong style="color:#3b82f6">B</strong> are both shown on screen, press <strong style="color:#63b3ed">Finish Synthesis &#8594;</strong></li>
+        </ul>
+        <div class="gd-tip">&#x1F5B1;&#xFE0F; <strong>Move the view:</strong> Right-click + drag OR hold Shift + drag to pan &nbsp;|&nbsp; Scroll wheel to zoom</div>
+      </div>
+    </div>
+    <div class="gd-card" id="gd-s5">
+      <div class="gd-icon" style="background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.25)">&#x1F3AC;</div>
+      <div class="gd-info">
+        <div class="gd-step-num">STEP 5</div>
+        <div class="gd-step-title">Watch Your Robot Arm Draw the Path!</div>
+        <ul class="gd-bullets">
+          <li>Press <strong style="color:#10b981">Form Linkage</strong> &#8212; the 4 arms of your machine will snap together!</li>
+          <li>The <strong style="color:#34d399">green arm</strong> spins around <strong>Hc</strong> (this is called the crank)</li>
+          <li>The <strong style="color:#60a5fa">blue arm</strong> rocks left and right around <strong>Hr</strong> (this is the rocker)</li>
+          <li>The <strong style="color:#fb923c">orange arm</strong> connects the crank and rocker (this is the coupler)</li>
+          <li>The <strong style="color:#f97316">orange dot</strong> on the orange arm is the pen tip &#8212; it should pass through all 5 of your target dots! &#x1F389;</li>
+          <li>Press <strong style="color:#fbbf24">Animate</strong> to start the motion. Drag the <strong>speed slider</strong> to go faster or slower</li>
+          <li>Toggle <strong>Primary / Crossed</strong> to try two different ways to connect the arms</li>
+        </ul>
+        <div class="gd-tip">&#x1F5B1;&#xFE0F; <strong>Move the view:</strong> Right-click + drag OR hold Shift + drag to pan &nbsp;|&nbsp; Scroll wheel to zoom</div>
+      </div>
+    </div>
+  </div>
+  <div class="gd-footer">&#x1F4A1; Press <strong>Escape</strong> or click anywhere outside this box to close</div>
+</div>
+</div>
+<script>
+(function(){
+  var cs=4;
+  var card=document.getElementById('gd-s'+cs);
+  if(card){card.classList.add('gd-current');var b=document.createElement('div');b.className='gd-current-badge';b.textContent='YOU ARE HERE';card.appendChild(b);}
+  for(var s=1;s<cs;s++){var p=document.getElementById('gd-s'+s);if(p)p.classList.add('gd-done');}
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')document.getElementById('guide-overlay').classList.remove('open');});
+})();
+</script>
+
+
+<!-- ═══ VIKAS × AI BADGE + CREDITS POPUP ═══ -->
+<style>
+#vikas-badge{
+  position:fixed;bottom:14px;right:16px;z-index:8888;
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 11px 5px 8px;
+  background:rgba(8,14,30,.72);
+  border:1px solid transparent;
+  border-radius:30px;
+  backdrop-filter:blur(10px);
+  font-family:'Inter','Segoe UI',sans-serif;
+  cursor:pointer;
+  box-shadow:0 0 0 1px rgba(139,92,246,.35),0 4px 18px rgba(0,0,0,.45);
+  transition:box-shadow .3s,transform .25s;
+  user-select:none;
+}
+#vikas-badge:hover{
+  box-shadow:0 0 0 1.5px rgba(139,92,246,.6),0 0 0 4px rgba(99,102,241,.12),0 6px 22px rgba(0,0,0,.5);
+  transform:translateY(-1px);
+}
+.vb-spark{font-size:10px;line-height:1;filter:drop-shadow(0 0 4px #a78bfa);}
+.vb-text{
+  font-size:10.5px;font-weight:300;letter-spacing:.04em;
+  background:linear-gradient(90deg,#93c5fd,#c4b5fd);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  white-space:nowrap;
+}
+.vb-copy{font-size:9px;font-weight:300;color:#c4b5fd;-webkit-text-fill-color:#c4b5fd;opacity:.75;margin-left:2px;}
+
+/* Credits popup */
+#credits-popup{
+  position:fixed;bottom:52px;right:16px;z-index:8889;
+  width:240px;
+  background:rgba(8,14,30,.88);
+  border:1px solid rgba(139,92,246,.3);
+  border-radius:14px;
+  padding:16px 18px;
+  box-shadow:0 8px 32px rgba(0,0,0,.55),0 0 0 1px rgba(139,92,246,.15);
+  backdrop-filter:blur(18px);
+  font-family:'Inter','Segoe UI',sans-serif;
+  opacity:0;pointer-events:none;
+  transform:translateY(8px) scale(.97);
+  transition:opacity .22s ease,transform .22s cubic-bezier(.34,1.3,.64,1);
+}
+#credits-popup.open{opacity:1;pointer-events:all;transform:translateY(0) scale(1);}
+.cp-title{
+  font-size:9px;font-weight:700;letter-spacing:.1em;
+  color:rgba(148,163,184,.45);margin-bottom:12px;
+  text-transform:uppercase;
+}
+.cp-row{display:flex;flex-direction:column;gap:8px;}
+.cp-item{
+  display:flex;flex-direction:column;gap:2px;
+  padding-bottom:8px;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+.cp-item:last-child{border-bottom:none;padding-bottom:0;}
+.cp-name{
+  font-size:11px;font-weight:600;
+  background:linear-gradient(90deg,#93c5fd,#c4b5fd);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.cp-desc{font-size:10px;font-weight:300;color:rgba(148,163,184,.7);line-height:1.5;}
+.cp-footer{
+  margin-top:12px;font-size:9px;font-weight:300;
+  color:rgba(148,163,184,.35);text-align:center;letter-spacing:.03em;
+}
+</style>
+
+<div id="credits-popup">
+  <div class="cp-title">Credits</div>
+  <div class="cp-row">
+    <div class="cp-item">
+      <span class="cp-name">Vikas</span>
+      <span class="cp-desc">Developer</span>
+    </div>
+    <div class="cp-item">
+      <span class="cp-name">AI&#8209;assisted</span>
+      <span class="cp-desc">Animation, link logic, Grashof condition, tracing lines</span>
+    </div>
+    <div class="cp-item">
+      <span class="cp-name">Tools</span>
+      <span class="cp-desc">Antigravity &nbsp;&middot;&nbsp; ChatGPT</span>
+    </div>
+  </div>
+  <div class="cp-footer">Built with AI support &nbsp;&#10022;</div>
+</div>
+
+<div id="vikas-badge" onclick="toggleCredits(event)">
+  <span class="vb-spark">&#10022;</span>
+  <span class="vb-text">Vikas &times; AI</span>
+  <span class="vb-copy">&copy;</span>
+</div>
+
+<script>
+(function(){
+  function toggleCredits(e){
+    e.stopPropagation();
+    document.getElementById('credits-popup').classList.toggle('open');
+  }
+  window.toggleCredits = toggleCredits;
+  document.addEventListener('click', function(e){
+    var p = document.getElementById('credits-popup');
+    var b = document.getElementById('vikas-badge');
+    if(p && !p.contains(e.target) && !b.contains(e.target)){
+      p.classList.remove('open');
+    }
+  });
+})();
+</script>
+</body>
+</html>
+
+
+<!-- ═══ VIKAS × AI BADGE + CREDITS POPUP ═══ -->
+<style>
+#vikas-badge{
+  position:fixed;bottom:14px;right:16px;z-index:8888;
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 11px 5px 8px;
+  background:rgba(8,14,30,.72);
+  border:1px solid transparent;
+  border-radius:30px;
+  backdrop-filter:blur(10px);
+  font-family:'Inter','Segoe UI',sans-serif;
+  cursor:pointer;
+  box-shadow:0 0 0 1px rgba(139,92,246,.35),0 4px 18px rgba(0,0,0,.45);
+  transition:box-shadow .3s,transform .25s;
+  user-select:none;
+}
+#vikas-badge:hover{
+  box-shadow:0 0 0 1.5px rgba(139,92,246,.6),0 0 0 4px rgba(99,102,241,.12),0 6px 22px rgba(0,0,0,.5);
+  transform:translateY(-1px);
+}
+.vb-spark{font-size:10px;line-height:1;filter:drop-shadow(0 0 4px #a78bfa);}
+.vb-text{
+  font-size:10.5px;font-weight:300;letter-spacing:.04em;
+  background:linear-gradient(90deg,#93c5fd,#c4b5fd);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  white-space:nowrap;
+}
+.vb-copy{font-size:9px;font-weight:300;color:#c4b5fd;-webkit-text-fill-color:#c4b5fd;opacity:.75;margin-left:2px;}
+
+/* Credits popup */
+#credits-popup{
+  position:fixed;bottom:52px;right:16px;z-index:8889;
+  width:240px;
+  background:rgba(8,14,30,.88);
+  border:1px solid rgba(139,92,246,.3);
+  border-radius:14px;
+  padding:16px 18px;
+  box-shadow:0 8px 32px rgba(0,0,0,.55),0 0 0 1px rgba(139,92,246,.15);
+  backdrop-filter:blur(18px);
+  font-family:'Inter','Segoe UI',sans-serif;
+  opacity:0;pointer-events:none;
+  transform:translateY(8px) scale(.97);
+  transition:opacity .22s ease,transform .22s cubic-bezier(.34,1.3,.64,1);
+}
+#credits-popup.open{opacity:1;pointer-events:all;transform:translateY(0) scale(1);}
+.cp-title{
+  font-size:9px;font-weight:700;letter-spacing:.1em;
+  color:rgba(148,163,184,.45);margin-bottom:12px;
+  text-transform:uppercase;
+}
+.cp-row{display:flex;flex-direction:column;gap:8px;}
+.cp-item{
+  display:flex;flex-direction:column;gap:2px;
+  padding-bottom:8px;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+.cp-item:last-child{border-bottom:none;padding-bottom:0;}
+.cp-name{
+  font-size:11px;font-weight:600;
+  background:linear-gradient(90deg,#93c5fd,#c4b5fd);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.cp-desc{font-size:10px;font-weight:300;color:rgba(148,163,184,.7);line-height:1.5;}
+.cp-footer{
+  margin-top:12px;font-size:9px;font-weight:300;
+  color:rgba(148,163,184,.35);text-align:center;letter-spacing:.03em;
+}
+</style>
+
+<div id="credits-popup">
+  <div class="cp-title">Credits</div>
+  <div class="cp-row">
+    <div class="cp-item">
+      <span class="cp-name">Vikas</span>
+      <span class="cp-desc">Developer</span>
+    </div>
+    <div class="cp-item">
+      <span class="cp-name">AI&#8209;assisted</span>
+      <span class="cp-desc">Animation, link logic, Grashof condition, tracing lines</span>
+    </div>
+    <div class="cp-item">
+      <span class="cp-name">Tools</span>
+      <span class="cp-desc">Antigravity &nbsp;&middot;&nbsp; ChatGPT</span>
+    </div>
+  </div>
+  <div class="cp-footer">Built with AI support &nbsp;&#10022;</div>
+</div>
+
+<div id="vikas-badge" onclick="toggleCredits(event)">
+  <span class="vb-spark">&#10022;</span>
+  <span class="vb-text">Vikas &times; AI</span>
+  <span class="vb-copy">&copy;</span>
+</div>
+
+<script>
+(function(){
+  function toggleCredits(e){
+    e.stopPropagation();
+    document.getElementById('credits-popup').classList.toggle('open');
+  }
+  window.toggleCredits = toggleCredits;
+  document.addEventListener('click', function(e){
+    var p = document.getElementById('credits-popup');
+    var b = document.getElementById('vikas-badge');
+    if(p && !p.contains(e.target) && !b.contains(e.target)){
+      p.classList.remove('open');
+    }
+  });
+})();
+</script>
+</body>
+</html>
